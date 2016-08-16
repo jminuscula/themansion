@@ -70,7 +70,7 @@ class GameCharacterAbility(models.Model):
         unique_together = (('game', 'character', 'ability'))
 
     def __str__(self):
-        return "{} for {}".format(self.ability.name, self.character.title)
+        return "{} for {} on {}".format(self.ability.name, self.character.title, self.game)
 
 
 class CharacterObjetiveTrigger(ChoicesEnum):
@@ -112,7 +112,7 @@ class GameCharacterObjective(models.Model):
     complete = models.BooleanField(default=False)
 
     def __str__(self):
-        return "{} for {}".format(self.objective.name, self.character.title)
+        return "{} for {} on {}".format(self.objective.name, self.character.title, self.game)
 
     class Meta:
         unique_together = (('game', 'character', 'objective'))
