@@ -13,7 +13,6 @@ class WeaponType(ChoicesEnum):
     Each weapon has different properties such as triggering modes or action time.
     Attacks are resolved in decreasing priority.
     """
-
     GUN = 'gun'
     KNIFE = 'knife'
     STUNT = 'stunt'
@@ -31,12 +30,15 @@ class Weapon(models.Model):
     """
     name = models.CharField(max_length=16, unique=True)
     description = models.CharField(max_length=256)
-    max_ammo = models.IntegerField(null=True)
-    starting_ammo = models.IntegerField(null=True)
+    max_ammo = models.IntegerField(blank=True, null=True)
+    starting_ammo = models.IntegerField(blank=True, null=True)
     starting_room = models.ForeignKey('Room', on_delete=models.PROTECT)
     resource = models.BooleanField(default=False)
     intention = models.BooleanField(default=True)
-    effect_turns = models.IntegerField(null=True)
+    effect_turns = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 
 
 class PlayerWeapon(models.Model):

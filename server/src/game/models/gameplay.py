@@ -15,5 +15,8 @@ class Game(models.Model):
     created_by = models.ForeignKey(User, related_name='games_owned', on_delete=models.PROTECT)
     created_on = models.DateTimeField(auto_now_add=True)
 
-    rooms = models.ManyToManyField('Room', through='GameRoom')
-    players = models.ManyToManyField(User, through='Player')
+    game_rooms = models.ManyToManyField('Room', through='GameRoom')
+    game_players = models.ManyToManyField(User, through='Player')
+
+    def __str__(self):
+        return "Game {}".format(self.pk)

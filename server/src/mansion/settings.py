@@ -120,3 +120,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+if DEBUG:
+    AUTH_PASSWORD_VALIDATORS = []
+    ALLOWED_HOSTS = ['127.0.0.1', ]

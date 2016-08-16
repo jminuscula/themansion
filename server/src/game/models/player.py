@@ -23,10 +23,19 @@ class Player(models.Model):
 
     character = models.ForeignKey('Character', on_delete=models.PROTECT)
     alive = models.BooleanField(default=True)
-    turns_to_die = models.IntegerField(null=True)
+    turns_to_die = models.IntegerField(blank=True, null=True)
     current_room = models.ForeignKey('GameRoom', related_name='players_here', on_delete=models.PROTECT)
+    hidden = models.BooleanField(default=False)
 
     weapons = models.ManyToManyField('Weapon', through='PlayerWeapon')
+
+    class Meta:
+        unique_together = (('game', 'user'), )
+        unique_together = (('game', 'character'), )
+        default_related_name = 'players'
+
+    def __str__(self):
+        return "{} ({})".format(self.user, self.character.title)
 
 
 class Terror(models.Model):

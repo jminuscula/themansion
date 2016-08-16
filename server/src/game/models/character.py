@@ -2,6 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from utils import ChoicesEnum
+
 from django.utils.translation import ugettext as _
 
 
@@ -9,20 +11,108 @@ class Character(models.Model):
     """
     A game character.
 
-    The available characters are fixed by the game rules.
-
-    Related fields:
-        objectives (game.models.character.CharacterObjective):
-            character objectives and scores
+    The available characters are fixed by the game rules
     """
     name = models.CharField(max_length=64, unique=True)
+    title = models.CharField(max_length=64)
     bio = models.CharField(max_length=512)
+    abilities = models.ManyToManyField('CharacterAbility', through='GameCharacterAbility')
+    objectives = models.ManyToManyField('CharacterObjective', through='GameCharacterObjective')
+
+    def __str__(self):
+        return "{} ({})".format(self.name, self.title)
+
+
+class CharacterAbilityActionPhase(ChoicesEnum):
+    """
+    Moments when a character's ability may be triggered.
+
+    Abilities may perform additional availability checks, such as checking for
+    a specifc room, or limiting the number of uses.
+    """
+    ROOM = 'room'
+    DAY = 'day'
+    NIGHT = 'night'
+    VOTING = 'voting'
+
+
+class CharacterAbility(models.Model):
+    """
+    A character's special ability.
+    """
+    name = models.CharField(max_length=32, unique=True)
+    description = models.CharField(max_length=512)
+    room = models.ManyToManyField('Room', blank=True)
+    action_phase = models.CharField(max_length=16,
+                                    null=True,
+                                    choices=CharacterAbilityActionPhase.choices())
+
+    class Meta:
+        verbose_name_plural = _('character abilities')
+
+    def __str__(self):
+        return self.name
+
+
+class GameCharacterAbility(models.Model):
+    """
+    Game character's ability tracking.
+
+    Checks for usage limit, availability, etc.
+    """
+    game = models.ForeignKey('Game', on_delete=models.CASCADE)
+    character = models.ForeignKey('Character')
+    ability = models.ForeignKey('CharacterAbility')
+    available = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name_plural = _('game character abilities')
+        unique_together = (('game', 'character', 'ability'))
+
+    def __str__(self):
+        return "{} for {}".format(self.ability.name, self.character.title)
+
+
+class CharacterObjetiveTrigger(ChoicesEnum):
+    """
+    Moment when an objetive must be checked for completion.
+    """
+    KILL = 'kill'
+    EXECUTE = 'execute'
+    TERRORIZE = 'terrorize'
+
+    KILLED = 'killed'
+    EXECUTED = 'executed'
+    TERRORIZED = 'terrorized'
+
+    ENDGAME = 'endgame'
 
 
 class CharacterObjective(models.Model):
     """
     A Character's mission objective.
     """
-    character = models.ForeignKey('Character', related_name='objectives', on_delete=models.CASCADE)
+    name = models.CharField(max_length=64, unique=True)
     description = models.CharField(max_length=256)
+    trigger = models.CharField(max_length=16, choices=CharacterObjetiveTrigger.choices())
     points = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+
+
+class GameCharacterObjective(models.Model):
+    """
+    Game character's objetive tracking.
+    """
+    game = models.ForeignKey('Game', on_delete=models.CASCADE)
+    character = models.ForeignKey('Character', on_delete=models.CASCADE)
+    objective = models.ForeignKey('CharacterObjective', on_delete=models.CASCADE)
+
+    complete = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "{} for {}".format(self.objective.name, self.character.title)
+
+    class Meta:
+        unique_together = (('game', 'character', 'objective'))

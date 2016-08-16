@@ -35,7 +35,9 @@ class Room(models.Model):
     name = models.CharField(max_length=64, unique=True)
     room_type = models.CharField(max_length=16, choices=RoomType.choices())
     connections = models.ManyToManyField('self',
-                                         related_name='connections',
+                                         blank=True,
+                                         symmetrical=False,
+                                         related_name='passages',
                                          related_query_name='connected_with')
 
     def __str__(self):
@@ -51,11 +53,12 @@ class GameRoom(models.Model):
     """
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
     room = models.ForeignKey('Room', on_delete=models.CASCADE)
-    weapons = models.ManyToManyField('Weapon')
+    weapons = models.ManyToManyField('Weapon', blank=True)
     is_open = models.BooleanField(default=True)
 
     class Meta:
         unique_together = (('game', 'room'), )
+        default_related_name = 'rooms'
 
     class GameRoomManager(models.Manager):
 
@@ -68,4 +71,4 @@ class GameRoom(models.Model):
     objects = GameRoomManager()
 
     def __str__(self):
-        return "{} in {}".format(self.name, self.game)
+        return "{} in {}".format(self.room.name, self.game)
