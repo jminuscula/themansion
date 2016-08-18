@@ -6,7 +6,7 @@ from game import models
 
 @admin.register(models.Room)
 class RoomAdmin(admin.ModelAdmin):
-    pass
+    filter_horizontal = ('connections', )
 
 
 class GameRoomInlineAdmin(admin.TabularInline):
@@ -15,4 +15,4 @@ class GameRoomInlineAdmin(admin.TabularInline):
 
 @admin.register(models.GameRoom)
 class GameRoomAdmin(admin.ModelAdmin):
-    pass
+    filter_horizontal = ('weapons', )

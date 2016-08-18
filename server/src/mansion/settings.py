@@ -122,6 +122,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
+from mansion.game_settings import *
+
 if DEBUG:
     AUTH_PASSWORD_VALIDATORS = []
     ALLOWED_HOSTS = ['127.0.0.1', ]

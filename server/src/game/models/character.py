@@ -66,8 +66,9 @@ class GameCharacterAbility(models.Model):
     available = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name_plural = _('game character abilities')
         unique_together = (('game', 'character', 'ability'))
+        verbose_name_plural = _('game character abilities')
+        default_related_name = 'abilities'
 
     def __str__(self):
         return "{} for {} on {}".format(self.ability.name, self.character.title, self.game)
@@ -108,7 +109,7 @@ class GameCharacterObjective(models.Model):
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
     character = models.ForeignKey('Character', on_delete=models.CASCADE)
     objective = models.ForeignKey('CharacterObjective', on_delete=models.CASCADE)
-
+    points = models.IntegerField(default=0)
     complete = models.BooleanField(default=False)
 
     def __str__(self):
@@ -116,3 +117,4 @@ class GameCharacterObjective(models.Model):
 
     class Meta:
         unique_together = (('game', 'character', 'objective'))
+        default_related_name = 'objectives'
