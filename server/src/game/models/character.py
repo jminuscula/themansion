@@ -16,8 +16,8 @@ class Character(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=64)
     bio = models.CharField(max_length=512)
-    abilities = models.ManyToManyField('CharacterAbility', through='GameCharacterAbility')
-    objectives = models.ManyToManyField('CharacterObjective', through='GameCharacterObjective')
+    character_abilities = models.ManyToManyField('CharacterAbility', through='GameCharacterAbility')
+    character_objectives = models.ManyToManyField('CharacterObjective', through='GameCharacterObjective')
 
     def __str__(self):
         return "{} ({})".format(self.name, self.title)
@@ -61,7 +61,7 @@ class GameCharacterAbility(models.Model):
     Checks for usage limit, availability, etc.
     """
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
-    character = models.ForeignKey('Character')
+    character = models.ForeignKey('Character', related_name='characters')
     ability = models.ForeignKey('CharacterAbility')
     available = models.BooleanField(default=True)
 

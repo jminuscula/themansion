@@ -20,8 +20,10 @@ class Game(models.Model):
 
     game_rooms = models.ManyToManyField('Room', through='GameRoom')
     game_players = models.ManyToManyField(User, through='Player')
-    current_night = models.ForeignKey('Night', null=True, on_delete=models.PROTECT)
-    current_day = models.ForeignKey('Day', null=True, on_delete=models.PROTECT)
+    current_night = models.ForeignKey('Night', null=True, on_delete=models.PROTECT,
+                                      related_name='current_night')
+    current_day = models.ForeignKey('Day', null=True, on_delete=models.PROTECT,
+                                    related_name='current_day')
 
     def __str__(self):
         return "Game {}".format(self.pk)
@@ -34,7 +36,7 @@ class Night(models.Model):
     A game has `GAME_NUMBER_NIGHTS` number of nights. During a Night phase,
     players must perform `GAME_NIGHT_TURNS` number of actions.
     """
-    game = models.ForeignKey('game', on_delete=models.CASCADE)
+    game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='nights')
     number = models.IntegerField(default=0)
     turns = models.IntegerField(default=settings.GAME_NIGHT_TURNS)
 
@@ -76,5 +78,5 @@ class Day(models.Model):
 
     During the day phase alive players will vote for one or more executions.
     """
-    game = models.ForeignKey('game', on_delete=models.CASCADE)
+    game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='days')
     number = models.IntegerField(default=0)
