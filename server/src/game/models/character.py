@@ -15,7 +15,7 @@ class Character(models.Model):
     """
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=64)
-    bio = models.CharField(max_length=512)
+    bio = models.TextField()
     character_abilities = models.ManyToManyField('CharacterAbility', through='GameCharacterAbility')
     character_objectives = models.ManyToManyField('CharacterObjective', through='GameCharacterObjective')
 
@@ -30,6 +30,7 @@ class CharacterAbilityActionPhase(ChoicesEnum):
     Abilities may perform additional availability checks, such as checking for
     a specifc room, or limiting the number of uses.
     """
+    PASSIVE = 'passive'  # passive abilities can't be triggered (ie -start with weapon)
     ROOM = 'room'
     DAY = 'day'
     NIGHT = 'night'
@@ -78,13 +79,14 @@ class CharacterObjetiveTrigger(ChoicesEnum):
     """
     Moment when an objetive must be checked for completion.
     """
-    KILL = 'kill'
+    KILL = 'kill'  # player kills
     EXECUTE = 'execute'
     TERRORIZE = 'terrorize'
 
-    KILLED = 'killed'
+    KILLED = 'killed'  # player is killed
     EXECUTED = 'executed'
     TERRORIZED = 'terrorized'
+    DEAD = 'dead'  # player is killed or executed
 
     ENDGAME = 'endgame'
 

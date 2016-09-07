@@ -30,6 +30,7 @@ class Weapon(models.Model):
     """
     name = models.CharField(max_length=16, unique=True)
     description = models.CharField(max_length=256)
+    weapon_type = models.CharField(max_length=16, choices=WeaponType.choices())
     max_ammo = models.IntegerField(blank=True, null=True)
     starting_ammo = models.IntegerField(blank=True, null=True)
     starting_room = models.ForeignKey('Room', on_delete=models.PROTECT)
