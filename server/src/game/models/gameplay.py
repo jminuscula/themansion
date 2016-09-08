@@ -1,11 +1,12 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.translation import ugettext as _
 
 from utils import ChoicesEnum
 from mansion import settings
 
-from django.utils.translation import ugettext as _
+from game.models.player import Player
 
 
 class Game(models.Model):
@@ -27,6 +28,9 @@ class Game(models.Model):
 
     def __str__(self):
         return "Game {}".format(self.pk)
+
+    def add_player(self, user, character):
+        return Player.objects.create(game=self, user=user, character=character)
 
 
 class Night(models.Model):

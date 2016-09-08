@@ -24,7 +24,8 @@ class Player(models.Model):
     character = models.ForeignKey('Character', on_delete=models.PROTECT)
     alive = models.BooleanField(default=True)
     turns_to_die = models.IntegerField(blank=True, null=True)
-    current_room = models.ForeignKey('GameRoom', related_name='players_here', on_delete=models.PROTECT)
+    current_room = models.ForeignKey('GameRoom', blank=True, null=True, on_delete=models.PROTECT,
+                                     related_name='players_here')
     hidden = models.BooleanField(default=False)
 
     weapons = models.ManyToManyField('Weapon', through='PlayerWeapon')
