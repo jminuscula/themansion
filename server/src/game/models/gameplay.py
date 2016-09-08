@@ -20,9 +20,9 @@ class Game(models.Model):
 
     game_rooms = models.ManyToManyField('Room', through='GameRoom')
     game_players = models.ManyToManyField(User, through='Player')
-    current_night = models.ForeignKey('Night', blank=True, on_delete=models.PROTECT,
+    current_night = models.ForeignKey('Night', null=True, blank=True, on_delete=models.PROTECT,
                                       related_name='current_night')
-    current_day = models.ForeignKey('Day', blank=True, on_delete=models.PROTECT,
+    current_day = models.ForeignKey('Day', null=True, blank=True, on_delete=models.PROTECT,
                                     related_name='current_day')
 
     def __str__(self):
