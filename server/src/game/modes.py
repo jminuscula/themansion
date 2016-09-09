@@ -3,7 +3,7 @@ import abc
 import random
 
 from game.models.gameplay import Game
-from game.models.weapon import Weapon
+from game.models.weapon import Weapon, CharacterWeapon
 from game.models.room import Room, GameRoom
 from game.models.persona import Persona
 from game.models.ability import Ability, CharacterAbility
@@ -38,6 +38,10 @@ class BaseGameMode(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractclassmethod
+    def get_weapons_for_character(cls, character):
+        pass
+
+    @abc.abstractclassmethod
     def create_game_room(cls, room, weapons):
         pass
 
@@ -51,6 +55,10 @@ class BaseGameMode(metaclass=abc.ABCMeta):
 
             for objective in cls.get_objectives_for_character(character):
                 CharacterObjective.objects.create(character=character, objective=objective)
+
+            for weapon in cls.get_weapons_for_character(character=character):
+                CharacterWeapon.objects.create(character=character, weapon=weapon,
+                                               ammo=weapon.starting_ammo)
 
         for room in cls.get_rooms():
             weapons = cls.get_weapons_for_room(room)
@@ -86,7 +94,8 @@ class DefaultCharactersMixin:
 
         elif len(players) == 6:
             pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter",
-                                                   "The Manipulator", "The Psychologist", "The Avenger"]})
+                                                   "The Manipulator", "The Psychologist",
+                                                   "The Avenger"]})
             pools.append({"picking": 1, "titles": ["The Maniac", "The Host"]})
 
         elif len(players) == 7:
@@ -130,13 +139,6 @@ class DefaultCharactersMixin:
                 titles.append(pool['titles'].pop())
 
         random.shuffle(titles)
-
-        elif len(players) == 6:
-            pools.append({"picking": 5, "titles" : ["The Policeman", "The Reporter",
-                                                    "The Manipulator", "The Psychologist",
-                                                    "The Avenger"]})
-            pools.append({"picking": 1, "titles" : ["The Maniac", "The Host"]})
-
         characters = []
 
         for (title, player) in zip(titles, players):
@@ -245,9 +247,13 @@ class DefaultWeaponsMixin:
         'Observatory': ('Wrench', ),
         'Master Bedroom': ('Cane', ),
         'Kitchen': ('Knife', ),
-        'Basement': ('Bullets', ),
+        'Basement': ('Gun', ),
         'Hall': ('Chandelier', ),
     }
+
+    STARTING_CHARACTER_WEAPONS = [
+        'Gun',
+    ]
 
     @classmethod
     def get_weapons_for_room(cls, room):
@@ -262,6 +268,16 @@ class DefaultWeaponsMixin:
         except KeyError:
             raise GameModeUnavailable('room "{}" has no weapons defined'.format(room.name))
 
+    @abc.abstractclassmethod
+    def get_weapons_for_character(cls, character):
+        try:
+            weapons = []
+            for weapon_name in cls.STARTING_CHARACTER_WEAPONS:
+                weapon = Weapon.objects.get(name=weapon_name)
+                weapons.append(weapon)
+            return weapons
+        except Weapon.DoesNotExist:
+            raise GameModeUnavailable('weapon "{}" is not available'.format(weapon_name))
 
 class DefaultGameMode(DefaultCharactersMixin,
                       DefaultRoomsMixin,

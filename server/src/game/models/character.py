@@ -45,6 +45,9 @@ class Character(models.Model):
         Returns all available action that the character may execute at this point.
         """
 
+    def hide(self):
+        self.hidden = True
+        return self.save(update_fields=('hidden', ))
 
 class Terror(models.Model):
     """
