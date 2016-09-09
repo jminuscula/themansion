@@ -1,5 +1,6 @@
 
 import abc
+import random
 
 from game.models.gameplay import Game
 from game.models.weapon import Weapon
@@ -75,20 +76,73 @@ class DefaultCharactersMixin:
 
     @classmethod
     def create_characters(cls, game, players):
-        try:
-            personas = []
-            for title in cls.DEFAULT_PERSONA_TITLES:
-                persona = Persona.objects.get(title=title)
-                personas.append(persona)
-        except Persona.DoesNotExist:
-            raise GameModeUnavailable('persona "{}" is not available'.format(title))
+
+        pools = []
+
+        if len(players) == 5:
+            pools.append({"picking": 2, "titles": ["The Policeman", "The Avenger"]})
+            pools.append({"picking": 2, "titles": ["The Maniac", "The Manipulator", "The Host"]})
+            pools.append({"picking": 1, "titles": ["The Reporter", "The Psychologist"]})
+
+        elif len(players) == 6:
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter",
+                                                   "The Manipulator", "The Psychologist", "The Avenger"]})
+            pools.append({"picking": 1, "titles": ["The Maniac", "The Host"]})
+
+        elif len(players) == 7:
+            pools.append({"picking": 4, "titles": ["The Policeman", "The Reporter",
+                                                   "The Manipulator", "The Psychologist"]})
+            pools.append({"picking": 3, "titles": ["The Maniac", "The Bodyguard", "The Host", "The Avenger"]})
+
+        elif len(players) == 8:
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard",
+                                                   "The Psychologist", "The Avenger"]})
+            pools.append({"picking": 3, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator",
+                                                   "The Host", "The Undertaker"]})
+
+        elif len(players) == 9:
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard",
+                                                   "The Psychologist", "The Avenger"]})
+            pools.append({"picking": 4, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator",
+                                                   "The Host", "The Undertaker"]})
+
+        elif len(players) == 10:
+            pools.append({"picking": 10, "titles": ["The Ex-Marine", "The Policeman", "The Maniac",
+                                                    "The Reporter", "The Bodyguard", "The Manipulator",
+                                                    "The Psychologist", "The Host", "The Avenger",
+                                                    "The Undertaker"]})
+
+        else:
+            raise ValueError('Invalid number of characters ({})'.format(len(players)))
+
+        titles = []
+
+        for pool in pools:
+            picked = 0
+            random.shuffle(pool['titles'])
+
+            while picked < pool['picking']:
+                titles.append(pool['titles'].pop())
+                picked += 1
+
+            if "The Undertaker" in titles and "The Host" not in titles:
+                titles.remove("The Undertaker")
+                titles.append(pool['titles'].pop())
+
+        random.shuffle(titles)
 
         characters = []
-        for (persona, player) in zip(personas, players):
+
+        for (title, player) in zip(titles, players):
+            try:
+                persona = Persona.objects.get(title=title)
+            except:
+                raise GameModeUnavailable('persona "{}" is not available'.format(title))
+
             character = Character.objects.create(game=game, player=player, persona=persona)
             characters.append(character)
-        return characters
 
+        return characters
 
 
 class DefaultAbilitiesMixin:
