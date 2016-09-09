@@ -131,6 +131,12 @@ class DefaultCharactersMixin:
 
         random.shuffle(titles)
 
+        elif len(players) == 6:
+            pools.append({"picking": 5, "titles" : ["The Policeman", "The Reporter",
+                                                    "The Manipulator", "The Psychologist",
+                                                    "The Avenger"]})
+            pools.append({"picking": 1, "titles" : ["The Maniac", "The Host"]})
+
         characters = []
 
         for (title, player) in zip(titles, players):

@@ -40,6 +40,11 @@ class Character(models.Model):
                                           message=msg,
                                           **current_stage)
 
+    def available_actions(self):  # TODO
+        """
+        Returns all available action that the character may execute at this point.
+        """
+
 
 class Terror(models.Model):
     """
