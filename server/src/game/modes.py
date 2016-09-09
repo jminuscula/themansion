@@ -85,23 +85,32 @@ class DefaultCharactersMixin:
             pools.append({"picking": 1, "titles": ["The Reporter", "The Psychologist"]})
 
         elif len(players) == 6:
-            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Manipulator", "The Psychologist", "The Avenger"]})  
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter",
+                                                   "The Manipulator", "The Psychologist", "The Avenger"]})
             pools.append({"picking": 1, "titles": ["The Maniac", "The Host"]})
 
         elif len(players) == 7:
-            pools.append({"picking": 4, "titles": ["The Policeman", "The Reporter", "The Manipulator", "The Psychologist"]})  
+            pools.append({"picking": 4, "titles": ["The Policeman", "The Reporter",
+                                                   "The Manipulator", "The Psychologist"]})
             pools.append({"picking": 3, "titles": ["The Maniac", "The Bodyguard", "The Host", "The Avenger"]})
 
         elif len(players) == 8:
-            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard", "The Psychologist", "The Avenger"]})  
-            pools.append({"picking": 3, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator", "The Host", "The Undertaker"]})
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard",
+                                                   "The Psychologist", "The Avenger"]})
+            pools.append({"picking": 3, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator",
+                                                   "The Host", "The Undertaker"]})
 
         elif len(players) == 9:
-            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard", "The Psychologist", "The Avenger"]})  
-            pools.append({"picking": 4, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator", "The Host", "The Undertaker"]})
+            pools.append({"picking": 5, "titles": ["The Policeman", "The Reporter", "The Bodyguard",
+                                                   "The Psychologist", "The Avenger"]})
+            pools.append({"picking": 4, "titles": ["The Ex-Marine", "The Maniac", "The Manipulator",
+                                                   "The Host", "The Undertaker"]})
 
         elif len(players) == 10:
-             pools.append({"picking": 10, "titles": ["The Ex-Marine", "The Policeman", "The Maniac", "The Reporter", "The Bodyguard", "The Manipulator", "The Psychologist", "The Host", "The Avenger", "The Undertaker"]})  
+            pools.append({"picking": 10, "titles": ["The Ex-Marine", "The Policeman", "The Maniac",
+                                                    "The Reporter", "The Bodyguard", "The Manipulator",
+                                                    "The Psychologist", "The Host", "The Avenger",
+                                                    "The Undertaker"]})
 
         else:
             raise ValueError('Invalid number of characters ({})'.format(len(players)))
@@ -112,7 +121,7 @@ class DefaultCharactersMixin:
             picked = 0
             random.shuffle(pool['titles'])
 
-            while picked < pool['picking']:         
+            while picked < pool['picking']:
                 titles.append(pool['titles'].pop())
                 picked += 1
 
