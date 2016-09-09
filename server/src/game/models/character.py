@@ -40,6 +40,14 @@ class Character(models.Model):
                                           message=msg,
                                           **current_stage)
 
+    def available_actions(self):  # TODO
+        """
+        Returns all available action that the character may execute at this point.
+        """
+
+    def hide(self):
+        self.hidden = True
+        self.save(update_fields=('hidden', ))
 
 class Terror(models.Model):
     """
