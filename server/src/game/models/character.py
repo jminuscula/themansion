@@ -6,6 +6,12 @@ from game.models.message import GameMessage
 
 
 class Character(models.Model):
+    """
+    A Character represents a persona being played by a real world Player.
+
+    Characters may have different abilities and objectives in each game, and
+    hold the gameplay properties related to their persona.
+    """
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
     player = models.ForeignKey(User, on_delete=models.CASCADE)
 

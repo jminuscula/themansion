@@ -6,7 +6,7 @@ class Persona(models.Model):
     """
     A game persona.
 
-    The available characters are fixed by the game rules
+    Personas will be controlled by players via Characters.
     """
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=64)
