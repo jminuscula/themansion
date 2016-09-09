@@ -12,7 +12,7 @@ class Character(models.Model):
     Characters may have different abilities and objectives in each game, and
     hold the gameplay properties related to their persona.
     """
-    game = models.ForeignKey('Game', on_delete=models.CASCADE)
+    game = models.ForeignKey('Game', on_delete=models.CASCADE, related_name='characters')
     player = models.ForeignKey(User, on_delete=models.CASCADE)
 
     persona = models.ForeignKey('Persona', on_delete=models.CASCADE)
