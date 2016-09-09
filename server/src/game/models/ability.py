@@ -111,3 +111,9 @@ class CharacterAbility(models.Model):
         """
         knife = Weapon.objects.get(name='Knife')
         CharacterWeapon.objects.create(character=self.character, weapon=knife)
+
+    def _ability_stealth(self, *args, game=None):
+        """
+        The character hides
+        """
+        self.character.hide()
