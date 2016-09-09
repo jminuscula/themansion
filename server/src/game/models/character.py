@@ -2,8 +2,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from django.utils.translation import ugettext as _
-
 
 class Character(models.Model):
     game = models.ForeignKey('Game', on_delete=models.CASCADE)

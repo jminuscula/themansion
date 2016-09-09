@@ -11,8 +11,8 @@ from .weapon import Weapon, WeaponType, CharacterWeapon
 __all__ = [
     'Game',
     'Persona',
-    'AbilityActionPhase', 'Ability', 'CharacterAbility,'
-    'ObjetiveTrigger', 'Objective', 'CharacterObjective',
+    'AbilityActionPhase', 'Ability', 'CharacterAbility',
+    'ObjectiveTrigger', 'Objective', 'CharacterObjective',
     'Character', 'Terror', 'Kill',
     'Room', 'RoomType', 'GameRoom',
     'Weapon', 'WeaponType', 'CharacterWeapon',

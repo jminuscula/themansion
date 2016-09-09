@@ -1,6 +1,5 @@
 
 from django.db import models
-from django.utils.translation import ugettext as _
 
 from utils import ChoicesEnum
 
@@ -31,7 +30,7 @@ class Ability(models.Model):
                                     choices=AbilityActionPhase.choices())
 
     class Meta:
-        verbose_name_plural = _('abilities')
+        verbose_name_plural = 'abilities'
 
     def __str__(self):
         return self.name
@@ -49,7 +48,7 @@ class CharacterAbility(models.Model):
 
     class Meta:
         unique_together = (('character', 'ability'), )
-        verbose_name_plural = _('character abilities')
+        verbose_name_plural = 'character abilities'
 
     def __str__(self):
         return "{} for {}".format(self.ability.name, self.character)
