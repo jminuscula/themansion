@@ -6,8 +6,6 @@ from django.utils.translation import ugettext as _
 from utils import ChoicesEnum
 from mansion import settings
 
-from game.models.player import Player
-
 
 class Game(models.Model):
     """
@@ -20,7 +18,6 @@ class Game(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
 
     game_rooms = models.ManyToManyField('Room', through='GameRoom')
-    game_players = models.ManyToManyField(User, through='Player')
     current_night = models.ForeignKey('Night', null=True, blank=True, on_delete=models.PROTECT,
                                       related_name='current_night')
     current_day = models.ForeignKey('Day', null=True, blank=True, on_delete=models.PROTECT,
@@ -29,8 +26,8 @@ class Game(models.Model):
     def __str__(self):
         return "Game {}".format(self.pk)
 
-    def add_player(self, user, character):
-        return Player.objects.create(game=self, user=user, character=character)
+    def start(self):
+        pass
 
 
 class Night(models.Model):
@@ -69,9 +66,9 @@ class NightAction(models.Model):
         weapon: attack weapon, collected weapon
     """
     night = models.ForeignKey('Night', related_name='actions', on_delete=models.CASCADE)
-    player = models.ForeignKey('Player', related_name='night_turns', on_delete=models.PROTECT)
+    character = models.ForeignKey('Character', related_name='night_turns', on_delete=models.PROTECT)
     action = models.CharField(max_length=32, choices=NightActions.choices())
-    player_target = models.ForeignKey('Player', null=True, on_delete=models.PROTECT)
+    character_target = models.ForeignKey('Character', null=True, on_delete=models.PROTECT)
     room_target = models.ForeignKey('GameRoom', null=True, on_delete=models.PROTECT)
     weapon_target = models.ForeignKey('Weapon', null=True, on_delete=models.PROTECT)
 

@@ -42,11 +42,11 @@ class Weapon(models.Model):
         return self.name
 
 
-class PlayerWeapon(models.Model):
+class CharacterWeapon(models.Model):
     """
     A weapon carried by a player.
     """
-    player = models.ForeignKey('Player', on_delete=models.CASCADE)
+    character = models.ForeignKey('Character', on_delete=models.CASCADE)
     weapon = models.ForeignKey('Weapon', on_delete=models.CASCADE)
     picked_at = models.ForeignKey('GameRoom', on_delete=models.PROTECT)
     ammo = models.IntegerField(null=True)

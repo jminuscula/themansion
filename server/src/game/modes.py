@@ -4,9 +4,10 @@ import abc
 from game.models.gameplay import Game
 from game.models.weapon import Weapon
 from game.models.room import Room, GameRoom
-from game.models.character import (Character,
-                                   CharacterAbility, GameCharacterAbility,
-                                   CharacterObjective, GameCharacterObjective)
+from game.models.persona import Persona
+from game.models.ability import Ability, CharacterAbility
+from game.models.objective import Objective, CharacterObjective
+from game.models.character import Character
 
 
 class GameModeUnavailable(Exception):
@@ -36,21 +37,19 @@ class BaseGameMode(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractclassmethod
-    def create_game_room(cls, game, room, weapons):
+    def create_game_room(cls, room, weapons):
         pass
 
     @classmethod
-    def create(cls, owner):
+    def create(cls, owner, players):
         game = Game.objects.create(created_by=owner)
 
-        for character in cls.get_characters():
-            abilities = cls.get_abilities_for_character(character)
-            for ability in abilities:
-                cls.create_game_character_ability(game, character, ability)
+        for character in cls.create_characters(game, players):
+            for ability in cls.get_abilities_for_character(character):
+                CharacterAbility.objects.create(character=character, ability=ability)
 
-            objectives = cls.get_objectives_for_character(character)
-            for objective in objectives:
-                cls.create_game_character_objective(game, character, objective)
+            for objective in cls.get_objectives_for_character(character):
+                CharacterObjective.objects.create(character=character, objective=objective)
 
         for room in cls.get_rooms():
             weapons = cls.get_weapons_for_room(room)
@@ -61,7 +60,7 @@ class BaseGameMode(metaclass=abc.ABCMeta):
 
 class DefaultCharactersMixin:
 
-    DEFAULT_CHARACTER_TITLES = [
+    DEFAULT_PERSONA_TITLES = [
         'The Psychologist',
         'The Bodyguard',
         'The Undertaker',
@@ -75,20 +74,26 @@ class DefaultCharactersMixin:
     ]
 
     @classmethod
-    def get_characters(cls):
+    def create_characters(cls, game, players):
         try:
-            characters = []
-            for title in cls.DEFAULT_CHARACTER_TITLES:
-                character = Character.objects.get(title=title)
-                characters.append(character)
-            return characters
-        except Character.DoesNotExist:
-            raise GameModeUnavailable('character "{}" is not available'.format(title))
+            personas = []
+            for title in cls.DEFAULT_PERSONA_TITLES:
+                persona = Persona.objects.get(title=title)
+                personas.append(persona)
+        except Persona.DoesNotExist:
+            raise GameModeUnavailable('persona "{}" is not available'.format(title))
+
+        characters = []
+        for (persona, player) in zip(personas, players):
+            character = Character.objects.create(game=game, player=player, persona=persona)
+            characters.append(character)
+        return characters
+
 
 
 class DefaultAbilitiesMixin:
 
-    DEFAULT_CHARACTER_ABILITIES = {
+    DEFAULT_ABILITIES = {
         'The Psychologist': ('profiling', ),
         'The Bodyguard': ('gun reflex', ),
         'The Undertaker': ('family privilege', ),
@@ -104,27 +109,20 @@ class DefaultAbilitiesMixin:
     @classmethod
     def get_abilities_for_character(cls, character):
         try:
-            abilities = cls.DEFAULT_CHARACTER_ABILITIES[character.title]
-            char_abilities = []
-            for abl_name in abilities:
-                ability = CharacterAbility.objects.get(name=abl_name)
-                char_abilities.append(ability)
-            return char_abilities
-        except CharacterAbility.DoesNotExist:
+            abilities = []
+            for abl_name in cls.DEFAULT_ABILITIES[character.persona.title]:
+                ability = Ability.objects.get(name=abl_name)
+                abilities.append(ability)
+            return abilities
+        except Ability.DoesNotExist:
             raise GameModeUnavailable('room "{}" is not available'.format(abl_name))
         except KeyError:
             raise GameModeUnavailable('character "{}" has no abilities defined'.format(character.title))
 
-    @classmethod
-    def create_game_character_ability(cls, game, character, ability):
-        return GameCharacterAbility.objects.create(game=game,
-                                                   character=character,
-                                                   ability=ability)
-
 
 class DefaultObjectivesMixin:
 
-    DEFAULT_CHARACTER_OBJECTIVES = {
+    DEFAULT_OBJECTIVES = {
         'The Psychologist': ('Analysis', 'Mediation', ),
         'The Bodyguard': ('Security', 'Control', ),
         'The Undertaker': ('Identification', 'Loyalty', ),
@@ -140,22 +138,15 @@ class DefaultObjectivesMixin:
     @classmethod
     def get_objectives_for_character(cls, character):
         try:
-            objectives = cls.DEFAULT_CHARACTER_OBJECTIVES[character.title]
-            char_objectives = []
-            for obj_name in objectives:
-                objective = CharacterObjective.objects.get(name=obj_name)
-                char_objectives.append(objective)
-            return char_objectives
-        except CharacterObjective.DoesNotExist:
+            objectives = []
+            for obj_name in cls.DEFAULT_OBJECTIVES[character.persona.title]:
+                objective = Objective.objects.get(name=obj_name)
+                objectives.append(objective)
+            return objectives
+        except Objective.DoesNotExist:
             raise GameModeUnavailable('objective "{}" is not available'.format(obj_name))
         except KeyError:
             raise GameModeUnavailable('character "{}" is not available'.format(character.title))
-
-    @classmethod
-    def create_game_character_objective(cls, game, character, objective):
-        return GameCharacterObjective.objects.create(game=game,
-                                                     character=character,
-                                                     objective=objective)
 
 
 class DefaultRoomsMixin:

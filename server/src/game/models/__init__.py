@@ -1,23 +1,19 @@
 
 from .gameplay import Game
-from .character import (Character,
-                        CharacterAbilityActionPhase, CharacterAbility, GameCharacterAbility,
-                        CharacterObjetiveTrigger, CharacterObjective, GameCharacterObjective)
-from .player import Player, Terror, Kill
+from .persona import Persona
+from .ability import AbilityActionPhase, Ability, CharacterAbility
+from .objective import ObjectiveTrigger, Objective, CharacterObjective
+from .character import Character, Terror, Kill
 from .room import Room, RoomType, GameRoom
-from .weapon import Weapon, WeaponType, PlayerWeapon
+from .weapon import Weapon, WeaponType, CharacterWeapon
 
 
 __all__ = [
     'Game',
-
-    'Character',
-    'CharacterAbilityActionPhase', 'CharacterAbility', 'GameCharacterAbility',
-    'CharacterObjetiveTrigger', 'CharacterObjective', 'GameCharacterObjective',
-
-    'Player', 'Terror', 'Kill',
-
+    'Persona',
+    'AbilityActionPhase', 'Ability', 'CharacterAbility,'
+    'ObjetiveTrigger', 'Objective', 'CharacterObjective',
+    'Character', 'Terror', 'Kill',
     'Room', 'RoomType', 'GameRoom',
-
-    'Weapon', 'WeaponType', 'PlayerWeapon',
+    'Weapon', 'WeaponType', 'CharacterWeapon',
 ]
