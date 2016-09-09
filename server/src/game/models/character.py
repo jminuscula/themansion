@@ -2,6 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from game.models.message import GameMessage
+
 
 class Character(models.Model):
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
@@ -19,9 +21,18 @@ class Character(models.Model):
 
     weapons = models.ManyToManyField('Weapon', through='CharacterWeapon')
 
-
     def __str__(self):
         return "{} as {} on {}".format(self.player, self.persona.title, self.game)
+
+    def post_message(self, msg):
+        current_stage = {'current_day': self.game.current_day}
+        if self.game.current_day is None:
+            current_stage = {'current_night': self.game.current_night}
+
+        return GameMessage.objects.create(character=self,
+                                          current_room=self.current_room,
+                                          message=msg,
+                                          **current_stage)
 
 
 class Terror(models.Model):

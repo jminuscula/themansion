@@ -6,6 +6,7 @@ from .objective import ObjectiveTrigger, Objective, CharacterObjective
 from .character import Character, Terror, Kill
 from .room import Room, RoomType, GameRoom
 from .weapon import Weapon, WeaponType, CharacterWeapon
+from .message import GameMessage
 
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     'Character', 'Terror', 'Kill',
     'Room', 'RoomType', 'GameRoom',
     'Weapon', 'WeaponType', 'CharacterWeapon',
+    'GameMessage',
 ]
