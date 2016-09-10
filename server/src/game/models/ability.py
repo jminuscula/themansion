@@ -89,12 +89,12 @@ class CharacterAbility(models.Model):
         return disabling
 
     @disable_after_run
-    def _ability_family_privilege(self, *args, game=None):
+    def _ability_family_privilege(self, *args, **kwargs):
         """
         The Host and The Undertaker have their identities revealed between them
         """
-        the_undertaker = Character.objects.get(game=game, persona__title='The Undertaker')
-        the_host = Character.objects.get(game=game, persona__title='The Host')
+        the_undertaker = Character.objects.get(game=self.character.game, persona__title='The Undertaker')
+        the_host = Character.objects.get(game=self.character.game, persona__title='The Host')
 
         the_undertaker.post_message(
             'As The Undertaker, you know The Host is {}'.format(the_host.player.username)
@@ -105,15 +105,30 @@ class CharacterAbility(models.Model):
         )
 
     @disable_after_run
-    def _ability_cutting_edge(self, *args, game=None):
+    def _ability_cutting_edge(self, *args, **kwargs):
         """
         The character gets a knife
         """
         knife = Weapon.objects.get(name='Knife')
         CharacterWeapon.objects.create(character=self.character, weapon=knife)
 
-    def _ability_stealth(self, *args, game=None):
+    def _ability_stealth(self, *args):
         """
         The character hides
         """
         self.character.hide()
+
+
+    def _ability_reload(self, *args, **kwargs):
+        """
+        The character reloads 2 Bullets
+        """
+        gun = CharacterWeapon.objects.get(character=self.character, weapon__name="Gun")
+        gun.ammo = 2
+        gun.save()
+
+    def _ability_gatekeeper(self, *args, room=None):
+        """
+        The character closes a door
+        """
+        room.close()

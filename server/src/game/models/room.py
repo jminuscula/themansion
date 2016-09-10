@@ -71,3 +71,11 @@ class GameRoom(models.Model):
 
     def __str__(self):
         return "{} in {}".format(self.room.name, self.game)
+
+    def close(self):
+        self.is_open = False
+        self.save(update_fields=('is_open', ))
+
+    def open(self):
+        self.is_open = True
+        self.save(update_fields=('is_open', ))
