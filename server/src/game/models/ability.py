@@ -143,7 +143,7 @@ class CharacterAbility(models.Model):
         The character closes a door
         """
         current = self.character.current_room
-        reachable_q = Q(pk=current.pk) | Q(pk__in=current.room.connections.all())
+        reachable_q = Q(pk=current.pk) | Q(room__pk__in=current.room.connections.all())
         open_rooms = GameRoom.objects.open().filter(reachable_q, room__closeable=True)
 
         if room not in open_rooms:

@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 from game.modes import DefaultGameMode
+from game.models import Character, Game
 
 
 class DefaultGameModeTestCase(TestCase):
@@ -17,5 +18,6 @@ class DefaultGameModeTestCase(TestCase):
         self.game = DefaultGameMode.create(self.owner, self.players)
 
     def tearDown(self):
-        self.game.delete()
-        self.players.delete()
+        Character.objects.all().delete()
+        Game.objects.all().delete()
+        User.objects.all().delete()

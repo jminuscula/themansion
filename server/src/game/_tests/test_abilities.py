@@ -1,6 +1,8 @@
 
 from .utils import DefaultGameModeTestCase
 
+from django.db.models import Q
+
 from game.models import CharacterWeapon, Character, CharacterAbility, GameRoom
 from game.exceptions import AbilityError
 
@@ -28,7 +30,7 @@ class AbilityTestCase(DefaultGameModeTestCase):
         gameroom = GameRoom.objects.filter(is_open=True, room__closeable=True)[0]
         gatekeeper = CharacterAbility.objects.get(character__game=self.game, ability__name='gatekeeper')
         gatekeeper.character.current_room = gameroom
-        gatekeeper.save()
+        gatekeeper.character.save()
 
         gatekeeper.run(room=gameroom)
         gameroom.refresh_from_db()
@@ -38,7 +40,7 @@ class AbilityTestCase(DefaultGameModeTestCase):
         gameroom = GameRoom.objects.filter(is_open=True, room__closeable=True)[0]
         gatekeeper = CharacterAbility.objects.get(character__game=self.game, ability__name='gatekeeper')
         gatekeeper.character.current_room = gameroom
-        gatekeeper.save()
+        gatekeeper.character.save()
 
         connected = GameRoom.objects.filter(pk__in=gameroom.room.connections.all(),
                                             is_open=True, room__closeable=True)[0]
@@ -75,8 +77,10 @@ class AbilityTestCase(DefaultGameModeTestCase):
         gameroom = GameRoom.objects.all()[0]
 
         gatekeeper.character.current_room = gameroom
-        gatekeeper.save()
-        distant = GameRoom.objects.all().exclude(pk=gameroom.pk)[0]
+        gatekeeper.character.save()
+        distant = GameRoom.objects.all().exclude(pk=gameroom.pk) \
+                                        .exclude(room__pk__in=gameroom.room.connections.all())[0]
 
+        # import ipdb; ipdb.set_trace()
         with self.assertRaises(AbilityError):
             gatekeeper.run(room=distant)
