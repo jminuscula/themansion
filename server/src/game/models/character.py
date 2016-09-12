@@ -47,7 +47,7 @@ class Character(models.Model):
 
     def hide(self):
         self.hidden = True
-        self.save(update_fields=('hidden', ))
+        return self.save(update_fields=('hidden', ))
 
 class Terror(models.Model):
     """

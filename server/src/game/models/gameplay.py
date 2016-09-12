@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from utils import ChoicesEnum
 from mansion import settings
 
+from game.models.ability import CharacterAbility
+
 
 class Game(models.Model):
     """
@@ -25,8 +27,18 @@ class Game(models.Model):
     def __str__(self):
         return "Game {}".format(self.pk)
 
-    def start(self):
-        pass
+    def start(self):  # TODO
+        """
+        Kickstarts the game:
+            - creates a new night
+            - executes start game abilities
+        """
+        for ability in CharacterAbility.objects.phase_start():
+            ability.run(game=self)
+
+    def broadcast_message(self, msg):
+        for character in self.characters.all():
+            character.post_message(msg)
 
 
 class Night(models.Model):

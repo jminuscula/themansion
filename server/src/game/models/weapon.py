@@ -46,5 +46,5 @@ class CharacterWeapon(models.Model):
     """
     character = models.ForeignKey('Character', on_delete=models.CASCADE)
     weapon = models.ForeignKey('Weapon', on_delete=models.CASCADE)
-    picked_at = models.ForeignKey('GameRoom', on_delete=models.PROTECT)
+    picked_at = models.ForeignKey('GameRoom', blank=True, null=True, on_delete=models.PROTECT)
     ammo = models.IntegerField(null=True)

@@ -10,9 +10,7 @@ from game.models.ability import Ability, CharacterAbility
 from game.models.objective import Objective, CharacterObjective
 from game.models.character import Character
 
-
-class GameModeUnavailable(Exception):
-    pass
+from game.exceptions import GameModeUnavailable, InvalidPlayerCount
 
 
 class BaseGameMode(metaclass=abc.ABCMeta):
@@ -122,7 +120,7 @@ class DefaultCharactersMixin:
                                                     "The Undertaker"]})
 
         else:
-            raise ValueError('Invalid number of characters ({})'.format(len(players)))
+            raise InvalidPlayerCount('Invalid number of characters ({})'.format(len(players)))
 
         titles = []
 
@@ -139,7 +137,6 @@ class DefaultCharactersMixin:
                 titles.append(pool['titles'].pop())
 
         random.shuffle(titles)
-
         characters = []
 
         for (title, player) in zip(titles, players):
