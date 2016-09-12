@@ -3,6 +3,7 @@ from django.test import TestCase
 
 from django.contrib.auth.models import User
 
+from game.exceptions import InvalidPlayerCount
 from game.modes import DefaultGameMode
 from game.models import Game, CharacterWeapon
 
@@ -25,12 +26,12 @@ class TestDefaultGameMode(TestCase):
         game = DefaultGameMode.create(self.owner, self.players)
         self.assertEqual(game.characters.count(), len(self.players))
 
-    def test_create_raises_value_error_when_not_enough_players(self):
-        with self.assertRaises(ValueError):
+    def test_create_raises_when_not_enough_players(self):
+        with self.assertRaises(InvalidPlayerCount):
             DefaultGameMode.create(self.owner, self.players[:2])
 
-    def test_create_raises_value_error_when_too_many_players(self):
-        with self.assertRaises(ValueError):
+    def test_create_raises_when_too_many_players(self):
+        with self.assertRaises(InvalidPlayerCount):
             DefaultGameMode.create(self.owner, list(self.players) * 2)
 
     def test_create_gives_characters_weapons(self):
