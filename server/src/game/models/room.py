@@ -1,6 +1,5 @@
 
 from django.db import models
-from django.contrib.auth.models import User
 
 from utils import ChoicesEnum
 
@@ -33,6 +32,7 @@ class Room(models.Model):
     """
     name = models.CharField(max_length=64, unique=True)
     room_type = models.CharField(max_length=16, choices=RoomType.choices())
+    closeable = models.BooleanField(default=True)
     connections = models.ManyToManyField('self',
                                          blank=True,
                                          symmetrical=False,

@@ -1,11 +1,14 @@
 
 from django.db import models
+from django.db.models import Q
 
 from utils import ChoicesEnum
 from functools import wraps
 
 from game.models.character import Character
 from game.models.weapon import Weapon, CharacterWeapon
+from game.models.room import GameRoom
+from game.exceptions import AbilityError
 
 
 class AbilityActionPhase(ChoicesEnum):
@@ -109,10 +112,14 @@ class CharacterAbility(models.Model):
         """
         The character gets a knife
         """
-        knife = Weapon.objects.get(name='Knife')
-        CharacterWeapon.objects.create(character=self.character, weapon=knife)
+        try:
+            knife = Weapon.objects.get(name='Knife')
+        except Weapon.DoesNotExist:
+            raise AbilityError('Knife is not available in this game')
 
-    def _ability_stealth(self, *args):
+        return CharacterWeapon.objects.create(character=self.character, weapon=knife)
+
+    def _ability_stealth(self, *args, **kwargs):
         """
         The character hides
         """
@@ -123,12 +130,23 @@ class CharacterAbility(models.Model):
         """
         The character reloads 2 Bullets
         """
-        gun = CharacterWeapon.objects.get(character=self.character, weapon__name="Gun")
+        try:
+            gun = CharacterWeapon.objects.get(character=self.character, weapon__name="Gun")
+        except CharacterWeapon.DoesNotExist:
+            raise AbilityError('Character does not have a gun')
+
         gun.ammo = 2
-        gun.save()
+        return gun.save()
 
     def _ability_gatekeeper(self, *args, room=None):
         """
         The character closes a door
         """
-        room.close()
+        current = self.character.current_room
+        reachable_q = Q(pk=current.pk) | Q(pk__in=current.room.connections.all())
+        open_rooms = GameRoom.objects.open().filter(reachable_q, room__closeable=True)
+
+        if room not in open_rooms:
+            raise AbilityError('Room is closed, not closable, or out of reach')
+
+        return room.close()

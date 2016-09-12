@@ -1,10 +1,11 @@
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 
 from game.modes import DefaultGameMode
 
 
-class NewGameTestCase(TestCase):
+class DefaultGameModeTestCase(TestCase):
     fixtures = ['initial_data']
 
     def setUp(self):
