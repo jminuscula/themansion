@@ -1,6 +1,8 @@
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from utils import ChoicesEnum
 from mansion import settings
@@ -19,6 +21,7 @@ class Game(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
 
     game_rooms = models.ManyToManyField('Room', through='GameRoom')
+    night_turns = models.IntegerField(default=settings.GAME_NIGHT_TURNS)
     current_night = models.ForeignKey('Night', null=True, blank=True, on_delete=models.CASCADE,
                                       related_name='current_night')
     current_day = models.ForeignKey('Day', null=True, blank=True, on_delete=models.CASCADE,
@@ -51,18 +54,23 @@ class Night(models.Model):
     """
     game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='nights')
     number = models.IntegerField(default=0)
-    turns_left = models.IntegerField(default=settings.GAME_NIGHT_TURNS)
+    turns_left = models.IntegerField()
 
     def save(self, *args, **kwargs):
-        saved = super().save(*args, **kwargs)
-        if self.game.current_night is None:
-            self.game.current_night = self
-            self.game.save(update_fields=('current_night', ))
-        return saved
+        if self.turns_left is None:
+            self.turns_left = self.game.night_turns
+        return super().save(*args, **kwargs)
 
     @property
     def is_new(self):
-        return self.turns == settings.GAME_NIGHT_TURNS
+        return self.turns == self.game.night_turns
+
+
+@receiver(post_save, sender=Night)
+def night_saved(sender, instance, *args, **kwargs):
+    if instance.game.current_night is None:
+        instance.game.current_night = instance
+        return instance.game.save(update_fields=('current_night', ))
 
 
 class NightActions(ChoicesEnum):
@@ -119,9 +127,11 @@ class Day(models.Model):
     game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='days')
     number = models.IntegerField(default=0)
 
-    def save(self, *args, **kwargs):
-        saved = super().save(*args, **kwargs)
-        if self.game.current_day is None:
-            self.game.current_day = self
-            self.game.save()
-        return saved
+
+
+
+@receiver(post_save, sender=Day)
+def day_saved(sender, instance, *args, **kwargs):
+    if instance.game.current_day is None:
+        instance.game.current_day = instance
+        return instance.game.save(update_fields=('current_day', ))
