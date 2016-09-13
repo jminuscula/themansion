@@ -61,9 +61,8 @@ class Night(models.Model):
             self.turns_left = self.game.night_turns
         return super().save(*args, **kwargs)
 
-    @property
     def is_new(self):
-        return self.turns == self.game.night_turns
+        return self.turns_left == self.game.night_turns
 
 
 @receiver(post_save, sender=Night)
@@ -126,8 +125,6 @@ class Day(models.Model):
     """
     game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='days')
     number = models.IntegerField(default=0)
-
-
 
 
 @receiver(post_save, sender=Day)

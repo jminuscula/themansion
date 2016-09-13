@@ -4,6 +4,8 @@
 env
 server/src/db.sqlite3
 
+htmlcov
+.coverage
 
 # Python files
 __pycache__
