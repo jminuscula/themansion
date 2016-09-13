@@ -8,6 +8,7 @@ from utils import ChoicesEnum
 from mansion import settings
 
 from game.models.ability import CharacterAbility
+from game.exceptions import GameUnstarted, GameComplete
 
 
 class Game(models.Model):
@@ -40,6 +41,27 @@ class Game(models.Model):
         for ability in CharacterAbility.objects.phase_start():
             ability.run(game=self)
 
+    def next_stage(self):
+        """
+        Cycles through Nights and Days until the end of the game is reached
+        """
+        if self.current_day is None and self.current_night is None:
+            raise GameUnstarted
+        elif self.nights.all().count() == settings.GAME_NUMBER_NIGHTS:
+            raise GameComplete
+
+        elif self.current_day is None:
+            stage_number = self.current_night.number
+            self.current_day = Day.objects.create(game=self, number=stage_number)
+            self.current_night = None
+
+        elif self.current_night is None:
+            stage_number = self.current_day.number + 1
+            self.current_night = Night.objects.create(game=self, number=stage_number)
+            self.current_day = None
+
+        return self.save()
+
     def broadcast_message(self, msg):
         for character in self.characters.all():
             character.post_message(msg)
@@ -66,7 +88,10 @@ class Night(models.Model):
 
 
 @receiver(post_save, sender=Night)
-def night_saved(sender, instance, *args, **kwargs):
+def set_current_night(sender, instance, *args, **kwargs):
+    """
+    Sets the current night for the game if there isn't one.
+    """
     if instance.game.current_night is None:
         instance.game.current_night = instance
         return instance.game.save(update_fields=('current_night', ))
@@ -104,7 +129,7 @@ class NightAction(models.Model):
         room: attack location, movement destination
         weapon: attack weapon, collected weapon
 
-    Some actions need confirmation
+    Some actions need confirmation.
     """
     night = models.ForeignKey('Night', related_name='actions', on_delete=models.CASCADE)
     character = models.ForeignKey('Character', related_name='night_turns', on_delete=models.PROTECT)
@@ -115,6 +140,22 @@ class NightAction(models.Model):
     weapon_target = models.ForeignKey('Weapon', null=True, on_delete=models.PROTECT)
 
     objects = NightActionManager
+
+
+@receiver(post_save, sender=NightAction)
+def check_night_is_complete(sender, instance, *args, **kwargs):
+    """
+    Checks if this is the last confirmed action of the night,
+    and advances the game in that case.
+    """
+    if instance.night.turns_left > 0:
+        return
+
+    action_count = instance.night.actions.confirmed().count()
+    characters_count = instance.night.game.characters.all().count()
+
+    if action_count == characters_count:
+        return instance.night.game.next_stage()
 
 
 class Day(models.Model):
@@ -128,7 +169,10 @@ class Day(models.Model):
 
 
 @receiver(post_save, sender=Day)
-def day_saved(sender, instance, *args, **kwargs):
+def set_current_day(sender, instance, *args, **kwargs):
+    """
+    Sets the current day for the game if there isn't one.
+    """
     if instance.game.current_day is None:
         instance.game.current_day = instance
         return instance.game.save(update_fields=('current_day', ))

@@ -21,5 +21,17 @@ class InvalidPlayerCount(GameException):
 
 class AbilityError(GameException):
     """
-    The ability conditions are not met and can not be executede
+    The ability conditions are not met and can not be executed
+    """
+
+
+class GameUnstarted(GameException):
+    """
+    The game has not started yet and can't perform any actions
+    """
+
+
+class GameComplete(GameException):
+    """
+    The game has ended and does not allow further actions
     """
