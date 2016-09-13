@@ -51,12 +51,21 @@ class CharacterAbilityObjectManager(models.Manager):
     def phase_start(self, *args, **kwargs):
         return self.filter(ability__action_phase=AbilityActionPhase.STARTGAME)
 
+    def phase_room(self, *args, **kwargs):
+        return self.filter(ability__action_phase=AbilityActionPhase.ROOM)
+
+    def phase_night(self, *args, **kwargs):
+        night_q = (Q(ability__action_phase=AbilityActionPhase.ROOM) |
+                   Q(ability__action_phase=AbilityActionPhase.NIGHT))
+        return self.filter(night_q)
+
 
 class CharacterAbility(models.Model):
     """
-    Game character's ability tracking.
+    Game character's ability.
 
-    Checks for usage limit, availability, etc.
+    This class serves as a dispatcher for ability functions. It also tracks
+    usage limit, availability, etc.
     """
     character = models.ForeignKey('Character')
     ability = models.ForeignKey('Ability')
@@ -72,6 +81,9 @@ class CharacterAbility(models.Model):
         return "{} for {}".format(self.ability.name, self.character)
 
     def get_ability_fn(self):
+        """
+        get this ability's specific method
+        """
         ability_fn_name = '_ability_{}'.format(self.ability.name)
         ability_fn_name = ability_fn_name.replace(' ', '_')
         ability_fn_name = ability_fn_name.lower()
@@ -82,7 +94,6 @@ class CharacterAbility(models.Model):
         """
         executes this ability's specific method
         """
-
         ability_fn = self.get_ability_fn()
         if ability_fn is None:
             raise ValueError('ability "{}" can not be executed'.format(self.ability.name))

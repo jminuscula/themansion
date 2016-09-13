@@ -3,6 +3,8 @@ from django.db import models
 
 from utils import ChoicesEnum
 
+from game.exceptions import RoomActionError
+
 
 class RoomType(ChoicesEnum):
     """
@@ -43,6 +45,49 @@ class Room(models.Model):
         return self.name
 
 
+class RoomAction(models.Model):
+    """
+    Room especial action.
+
+    This class serves as a dispatcher for especial room actions.
+    """
+    name = models.CharField(max_length=64, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_action_fn(self):
+        """
+        Get this actions's specific method
+        """
+        action_fn_name = '_ability_{}'.format(self.name)
+        action_fn_name = action_fn_name.replace(' ', '_')
+        action_fn_name = action_fn_name.lower()
+
+        return getattr(self, action_fn_name)
+
+    def run(self, *args, **kwargs):
+        """
+        Execute this action's specific method
+        """
+        action_fn = self.get_action_fn()
+        if action_fn is None:
+            raise RoomActionError('room action "{}" can not be executed'.format(self.name))
+
+        return action_fn(self, *args, **kwargs)
+
+    def _action_reload(self):
+        """
+        Yield a bullet for the player if possible
+        """
+
+    def _action_switch_light(self):
+        """
+        Switch the room light.
+        Dark rooms do not inform players about other characters in the room.
+        """
+
+
 class GameRoom(models.Model):
     """
     A room in a specific game.
@@ -52,8 +97,10 @@ class GameRoom(models.Model):
     """
     game = models.ForeignKey('Game', on_delete=models.CASCADE)
     room = models.ForeignKey('Room', on_delete=models.CASCADE)
-    weapons = models.ManyToManyField('Weapon', blank=True)
     is_open = models.BooleanField(default=True)
+    dark = models.BooleanField(default=False)
+    weapons = models.ManyToManyField('Weapon', blank=True)
+    actions = models.ManyToManyField('RoomAction', blank=True)
 
     class Meta:
         unique_together = (('game', 'room'), )
@@ -79,3 +126,9 @@ class GameRoom(models.Model):
     def open(self):
         self.is_open = True
         self.save(update_fields=('is_open', ))
+
+    def get_actions(self):
+        """
+        Returns the names of the actions available in this room.
+        """
+        return [action.name for action in self.action.objects.all()]

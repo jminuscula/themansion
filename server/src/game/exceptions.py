@@ -25,6 +25,11 @@ class AbilityError(GameException):
     """
 
 
+class RoomActionError(GameException):
+    """
+    The room action is not available
+    """
+
 class GameUnstarted(GameException):
     """
     The game has not started yet and can't perform any actions
