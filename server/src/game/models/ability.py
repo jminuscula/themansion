@@ -45,8 +45,11 @@ class Ability(models.Model):
 
 class CharacterAbilityObjectManager(models.Manager):
 
+    def available(self, *args, **kwargs):
+        return self.filter(available=True)
+
     def phase_start(self, *args, **kwargs):
-        return self.filter(available=True, ability__action_phase=AbilityActionPhase.STARTGAME)
+        return self.filter(ability__action_phase=AbilityActionPhase.STARTGAME)
 
 
 class CharacterAbility(models.Model):
@@ -68,15 +71,19 @@ class CharacterAbility(models.Model):
     def __str__(self):
         return "{} for {}".format(self.ability.name, self.character)
 
-    def run(self, *args, **kwargs):
-        """
-        executes this ability's specific method
-        """
+    def get_ability_fn(self):
         ability_fn_name = '_ability_{}'.format(self.ability.name)
         ability_fn_name = ability_fn_name.replace(' ', '_')
         ability_fn_name = ability_fn_name.lower()
 
-        ability_fn = getattr(self, ability_fn_name)
+        return getattr(self, ability_fn_name)
+
+    def run(self, *args, **kwargs):
+        """
+        executes this ability's specific method
+        """
+
+        ability_fn = self.get_ability_fn()
         if ability_fn is None:
             raise ValueError('ability "{}" can not be executed'.format(self.ability.name))
 

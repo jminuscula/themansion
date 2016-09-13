@@ -1,22 +1,12 @@
 
-from django.test import TestCase
-
-from django.contrib.auth.models import User
+from .utils import DefaultGameModeTestCase
 
 from game.exceptions import InvalidPlayerCount
 from game.modes import DefaultGameMode
 from game.models import Game, CharacterWeapon
 
 
-class TestDefaultGameMode(TestCase):
-    fixtures = ['initial_data']
-
-    def setUp(self):
-        for i in range(10):
-            User.objects.create(username='player{}'.format(i), password='password')
-
-        self.players = User.objects.all()
-        self.owner = self.players[0]
+class DefaultGameTestCase(DefaultGameModeTestCase):
 
     def test_create_returns_a_game(self):
         game = DefaultGameMode.create(self.owner, self.players)
