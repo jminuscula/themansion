@@ -32,6 +32,10 @@ class BaseGameMode(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractclassmethod
+    def get_starting_room(cls):
+        pass
+
+    @abc.abstractclassmethod
     def get_weapons_for_room(cls, room):
         pass
 
@@ -47,6 +51,12 @@ class BaseGameMode(metaclass=abc.ABCMeta):
     def create(cls, owner, players):
         game = Game.objects.create(created_by=owner)
 
+        for room in cls.get_rooms():
+            weapons = cls.get_weapons_for_room(room)
+            cls.create_game_room(game, room, weapons)
+
+        game.starting_room = cls.get_starting_room(game)
+
         for character in cls.create_characters(game, players):
             for ability in cls.get_abilities_for_character(character):
                 CharacterAbility.objects.create(character=character, ability=ability)
@@ -57,10 +67,6 @@ class BaseGameMode(metaclass=abc.ABCMeta):
             for weapon in cls.get_weapons_for_character(character=character):
                 CharacterWeapon.objects.create(character=character, weapon=weapon,
                                                ammo=weapon.starting_ammo)
-
-        for room in cls.get_rooms():
-            weapons = cls.get_weapons_for_room(room)
-            cls.create_game_room(game, room, weapons)
 
         return game
 
@@ -220,6 +226,8 @@ class DefaultRoomsMixin:
         'Hall',
     ]
 
+    DEFAULT_STARTING_ROOM = 'Hall'
+
     @classmethod
     def get_rooms(cls):
         try:
@@ -229,6 +237,19 @@ class DefaultRoomsMixin:
             return rooms
         except Room.DoesNotExist:
             raise GameModeUnavailable('room "{}" is not available'.format(room))
+
+    @classmethod
+    def get_starting_room(cls, game):
+        try:
+            starting_room = Room.objects.get(name=cls.DEFAULT_STARTING_ROOM)
+        except Room.DoesNotExist:
+            raise GameModeUnavailable('room "{}" is not available'.format(starting_room))
+
+        try:
+            return GameRoom.objects.get(game=game, room=starting_room)
+        except GameRoom.DoesNotExist:
+            import ipdb; ipdb.set_trace()
+            raise GameModeUnavailable('room "{}" is not available'.format(starting_room))
 
     @classmethod
     def create_game_room(cls, game, room, weapons):

@@ -22,6 +22,7 @@ class Game(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
 
     game_rooms = models.ManyToManyField('Room', through='GameRoom')
+    starting_room = models.ForeignKey('GameRoom', null=True, blank=True, related_name='starting_room')
     night_turns = models.IntegerField(default=settings.GAME_NIGHT_TURNS)
     current_night = models.ForeignKey('Night', null=True, blank=True, on_delete=models.CASCADE,
                                       related_name='current_night')
