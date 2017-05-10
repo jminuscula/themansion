@@ -1,5 +1,5 @@
 
-from .gameplay import Game, Night, NightAction, Day
+from .gameplay import Game
 from .persona import Persona
 from .ability import AbilityActionPhase, Ability, CharacterAbility
 from .objective import ObjectiveTrigger, Objective, CharacterObjective
@@ -7,6 +7,7 @@ from .character import Character, Terror, Kill
 from .room import Room, RoomType, GameRoom
 from .weapon import Weapon, WeaponType, CharacterWeapon
 from .message import GameMessage
+from .stage import Night, NightAction, Day
 
 
 __all__ = [
