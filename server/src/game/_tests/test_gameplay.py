@@ -27,16 +27,16 @@ class GameplayTestCase(DefaultGameModeTestCase):
         self.game.start()
         self.assertTrue(type(self.game.current_night) is Night)
 
-    def test_nights_start_with_full_number_of_turns(self):
+    def test_night_starts_with_turn(self):
+        self.assertTrue(self.game.current_night is None)
         night = Night.objects.create(game=self.game)
-        self.assertEqual(night.turns_left, self.game.night_turns)
+        self.assertTrue(night.current_turn is not None)
 
-    def test_night_is_new_when_full_number_of_turns(self):
-        night = Night.objects.create(game=self.game)
+    def test_night_is_new_when_turns_are_zero(self):
+        night = Night(game=self.game)
         self.assertTrue(night.is_new())
-
-        night.turns_left -= 1
         night.save()
+        night.next_turn()
         self.assertFalse(night.is_new())
 
     def test_next_stage_can_not_advance_unstarted_game(self):
