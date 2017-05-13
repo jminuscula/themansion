@@ -29,12 +29,8 @@ class Night(models.Model):
     def is_new(self):
         return self.turn_count() == 0
 
-    def start(self):
-        pass
-
     def next_turn(self):
         turn_count = self.turn_count() + 1
-        print("---Next turn:", turn_count, ">", settings.GAME_NIGHT_TURNS)
         if turn_count > settings.GAME_NIGHT_TURNS:
             return self.game.next_stage()
 
@@ -47,7 +43,7 @@ def start_new_night(sender, instance, *args, **kwargs):
     If the night is new, start it
     """
     if instance.is_new():
-        instance.next_turn()
+        return instance.next_turn()
 
 
 class NightTurn(models.Model):
@@ -59,10 +55,6 @@ class NightTurn(models.Model):
 
     def __str__(self):
         return "Turn {} in {}".format(self.number, self.night)
-
-@receiver(post_save, sender=NightTurn)
-def set_current_night_turn(sender, instance, *args, **kwargs):
-    print("Stage - post_save NightTurn")
 
 class NightActions(ChoicesEnum):
     """
@@ -106,7 +98,10 @@ class NightAction(models.Model):
     room_target = models.ForeignKey('GameRoom', null=True, on_delete=models.PROTECT)
     weapon_target = models.ForeignKey('Weapon', null=True, on_delete=models.PROTECT)
 
-    objects = NightActionManager
+    objects = NightActionManager()
+
+    def __str__(self):
+        return "{} by {} in {}".format(self.action, self.character.persona.name, self.night_turn)
 
 @receiver(post_save, sender=NightAction)
 def check_if_turn_is_complete(sender, instance, *args, **kwargs):
@@ -115,10 +110,10 @@ def check_if_turn_is_complete(sender, instance, *args, **kwargs):
     and advances the night in that case.
     """
     action_count = instance.night_turn.actions.confirmed().count()
-    characters_count = instance.night_turn.game.characters.all().count()
+    characters_count = instance.night_turn.night.game.characters.all().count()
 
     if action_count == characters_count:
-        instance.night_turn.night.next_turn()
+        return instance.night_turn.night.next_turn()
 
 
 class Day(models.Model):
@@ -129,6 +124,9 @@ class Day(models.Model):
     """
     game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='days')
     number = models.IntegerField(default=0)
+
+    def end(self):
+        return self.game.next_stage()
 
 
 @receiver(post_save, sender=Day)
