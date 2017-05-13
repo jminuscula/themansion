@@ -13,30 +13,56 @@ class Night(models.Model):
     A night phase of a game.
 
     A game has `GAME_NUMBER_NIGHTS` number of nights. During a Night phase,
-    players must perform `GAME_NIGHT_TURNS` number of actions.
+    there must be `GAME_NIGHT_TURNS` number of NightTurns.
     """
     game = models.ForeignKey('game', on_delete=models.CASCADE, related_name='nights')
     number = models.IntegerField(default=0)
-    turns_left = models.IntegerField()
+    current_turn = models.ForeignKey('NightTurn', null=True, blank=True, on_delete=models.CASCADE,
+                                      related_name='current_turn')
 
-    def save(self, *args, **kwargs):
-        if self.turns_left is None:
-            self.turns_left = self.game.night_turns
-        return super().save(*args, **kwargs)
+    def __str__(self):
+        return "Night {} in game {}".format(self.number, self.game)
+
+    def turn_count(self):
+        return self.night_turns.count()
 
     def is_new(self):
-        return self.turns_left == self.game.night_turns
+        return self.turn_count() == 0
 
+    def start(self):
+        pass
+
+    def next_turn(self):
+        turn_count = self.turn_count() + 1
+        print("---Next turn:", turn_count, ">", settings.GAME_NIGHT_TURNS)
+        if turn_count > settings.GAME_NIGHT_TURNS:
+            return self.game.next_stage()
+
+        self.current_turn = NightTurn.objects.create(night=self, number=turn_count)
+        return self.save()
 
 @receiver(post_save, sender=Night)
-def set_current_night(sender, instance, *args, **kwargs):
+def start_new_night(sender, instance, *args, **kwargs):
     """
-    Sets the current night for the game if there isn't one.
+    If the night is new, start it
     """
-    if instance.game.current_night is None:
-        instance.game.current_night = instance
-        return instance.game.save(update_fields=('current_night', ))
+    if instance.is_new():
+        instance.next_turn()
 
+
+class NightTurn(models.Model):
+    """
+    A turn in a specific night of a specific game
+    """
+    night = models.ForeignKey('Night', related_name='night_turns', on_delete=models.CASCADE)
+    number = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "Turn {} in {}".format(self.number, self.night)
+
+@receiver(post_save, sender=NightTurn)
+def set_current_night_turn(sender, instance, *args, **kwargs):
+    print("Stage - post_save NightTurn")
 
 class NightActions(ChoicesEnum):
     """
@@ -72,7 +98,7 @@ class NightAction(models.Model):
 
     Some actions need confirmation.
     """
-    night = models.ForeignKey('Night', related_name='actions', on_delete=models.CASCADE)
+    night_turn = models.ForeignKey('NightTurn', related_name='actions', on_delete=models.CASCADE)
     character = models.ForeignKey('Character', related_name='night_turns', on_delete=models.PROTECT)
     action = models.CharField(max_length=32, choices=NightActions.choices())
     confirmed = models.BooleanField(default=False)
@@ -82,21 +108,17 @@ class NightAction(models.Model):
 
     objects = NightActionManager
 
-
 @receiver(post_save, sender=NightAction)
-def check_night_is_complete(sender, instance, *args, **kwargs):
+def check_if_turn_is_complete(sender, instance, *args, **kwargs):
     """
-    Checks if this is the last confirmed action of the night,
-    and advances the game in that case.
+    Checks if this is the last confirmed action of the turn,
+    and advances the night in that case.
     """
-    if instance.night.turns_left > 0:
-        return
-
-    action_count = instance.night.actions.confirmed().count()
-    characters_count = instance.night.game.characters.all().count()
+    action_count = instance.night_turn.actions.confirmed().count()
+    characters_count = instance.night_turn.game.characters.all().count()
 
     if action_count == characters_count:
-        return instance.night.game.next_stage()
+        instance.night_turn.night.next_turn()
 
 
 class Day(models.Model):

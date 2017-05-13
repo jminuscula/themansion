@@ -7,7 +7,7 @@ from .character import Character, Terror, Kill
 from .room import Room, RoomType, GameRoom
 from .weapon import Weapon, WeaponType, CharacterWeapon
 from .message import GameMessage
-from .stage import Night, NightAction, Day
+from .stage import Night, NightTurn, NightAction, Day
 
 
 __all__ = [
