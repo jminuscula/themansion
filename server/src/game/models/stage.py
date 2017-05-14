@@ -2,11 +2,13 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+from django.db.models import Q
 from django.dispatch import receiver
 
 from utils import ChoicesEnum
 from mansion import settings
-
+from game.actions import move_action
+from game.models.weapon import WeaponType
 
 class Night(models.Model):
     """
@@ -30,8 +32,8 @@ class Night(models.Model):
         return self.turn_count() == 0
 
     def next_turn(self):
-        turn_count = self.turn_count() + 1
-        if turn_count > settings.GAME_NIGHT_TURNS:
+        turn_count = self.turn_count()
+        if turn_count >= settings.GAME_NIGHT_TURNS:
             return self.game.next_stage()
 
         self.current_turn = NightTurn.objects.create(night=self, number=turn_count)
@@ -40,9 +42,14 @@ class Night(models.Model):
 @receiver(post_save, sender=Night)
 def start_new_night(sender, instance, *args, **kwargs):
     """
-    If the night is new, start it
+    If the night is new, restart the characters and start it
     """
     if instance.is_new():
+        characters = instance.game.characters.all()
+        for character in characters:
+            character.current_room = instance.game.starting_room
+            character.save()
+
         return instance.next_turn()
 
 
@@ -55,6 +62,15 @@ class NightTurn(models.Model):
 
     def __str__(self):
         return "Turn {} in {}".format(self.number, self.night)
+
+    def resolve(self):
+        self.exectue_actions()
+        self.night.next_turn()
+
+    def exectue_actions(self):
+        actions = self.actions.all()
+        for action in actions:
+            action.execute()
 
 class NightActions(ChoicesEnum):
     """
@@ -69,6 +85,7 @@ class NightActions(ChoicesEnum):
     SPECIAL = 'special'
     CLOSE_DOOR = 'close_door'
     OPEN_DOOR = 'open_door'
+    WAIT = 'wait'
 
 
 class NightActionManager(models.Manager):
@@ -79,6 +96,33 @@ class NightActionManager(models.Manager):
     def pending(self):
         return self.filter(confirmed=False)
 
+    def attacks(self):
+        return self.filter(
+            Q(action=NightActions.ATTACK_KILL) |
+            Q(action=NightActions.ATTACK_BLANK) |
+            Q(action=NightActions.ATTACK_DEFEND)
+            )
+
+    def priority(self, level):
+        if level == 1:
+            # Spy, hide, heal
+            pass
+        elif level == 2:
+            return self.filter(action==NightActions.CLOSE_DOOR)
+        elif level == 3:
+            return self.attacks().filter(weapon_target__weapon_type=WeaponType.GUN)
+        elif level == 4:
+            return self.attacks().filter(weapon_target__weapon_type=WeaponType.KNIFE)
+        elif level == 5:
+            return self.attacks().filter(weapon_target__weapon_type=WeaponType.STUNT)
+        elif level == 6:
+            return self.filter(action=NightActions.MOVE)
+        elif level == 7:
+            return self.attacks().filter(weapon_target__weapon_type=WeaponType.POISON)
+
+        else:
+            return None
+
 
 class NightAction(models.Model):
     """
@@ -87,8 +131,6 @@ class NightAction(models.Model):
         player: attacked player
         room: attack location, movement destination
         weapon: attack weapon, collected weapon
-
-    Some actions need confirmation.
     """
     night_turn = models.ForeignKey('NightTurn', related_name='actions', on_delete=models.CASCADE)
     character = models.ForeignKey('Character', related_name='night_turns', on_delete=models.PROTECT)
@@ -103,6 +145,13 @@ class NightAction(models.Model):
     def __str__(self):
         return "{} by {} in {}".format(self.action, self.character.persona.name, self.night_turn)
 
+    def execute(self):
+        if self.action == NightActions.MOVE:
+            move_action(self.character, self.room_target)
+
+        if self.action == NightActions.WAIT:
+            pass
+
 @receiver(post_save, sender=NightAction)
 def check_if_turn_is_complete(sender, instance, *args, **kwargs):
     """
@@ -113,7 +162,7 @@ def check_if_turn_is_complete(sender, instance, *args, **kwargs):
     characters_count = instance.night_turn.night.game.characters.all().count()
 
     if action_count == characters_count:
-        return instance.night_turn.night.next_turn()
+        return instance.night_turn.resolve()
 
 
 class Day(models.Model):

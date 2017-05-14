@@ -35,3 +35,8 @@ class GameComplete(GameException):
     """
     The game has ended and does not allow further actions
     """
+
+class ActionInWrongStage(GameException):
+    """
+    An action is attempted during a Day stage
+    """

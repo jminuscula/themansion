@@ -4,8 +4,11 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from game.exceptions import ActionInWrongStage
+
 from game.models.message import GameMessage
-from game.models.stage import Night
+from game.models.room import GameRoom
+from game.models.stage import Night, NightTurn, NightAction, NightActions
 
 class Character(models.Model):
     """
@@ -46,6 +49,15 @@ class Character(models.Model):
         """
         Returns all available action that the character may execute at this point.
         """
+
+    def make_action(self, action,  character_target=None, room_target=None, weapon_target=None):
+        if self.game.current_night is None:
+            raise ActionInWrongStage
+
+        night_turn = self.game.current_night.current_turn
+
+        nightAction = NightAction.objects.create(night_turn=night_turn, character=self, action=action, confirmed = True,
+            character_target=character_target, room_target=room_target, weapon_target=weapon_target)
 
     def hide(self):
         self.hidden = True
