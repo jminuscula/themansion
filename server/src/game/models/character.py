@@ -50,13 +50,20 @@ class Character(models.Model):
         Returns all available action that the character may execute at this point.
         """
 
+    def current_action(self):
+        """
+        Returns the action that the character has declared in this night turn (or None)
+        """
+        return self.night_actions.active().first()
+
+
     def make_action(self, action,  character_target=None, room_target=None, weapon_target=None):
         if self.game.current_night is None:
             raise ActionInWrongStage
 
         night_turn = self.game.current_night.current_turn
 
-        nightAction = NightAction.objects.create(night_turn=night_turn, character=self, action=action, confirmed = True,
+        nightAction = NightAction.objects.new_action(night_turn=night_turn, character=self, action=action,
             character_target=character_target, room_target=room_target, weapon_target=weapon_target)
 
     def hide(self):

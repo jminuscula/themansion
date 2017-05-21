@@ -79,3 +79,36 @@ class GameRoom(models.Model):
     def open(self):
         self.is_open = True
         self.save(update_fields=('is_open', ))
+
+    def list_weapons(self):
+        return [weapon.name for weapon in self.weapons.all()]
+
+    def list_activity(self):
+        people = self.players_here.filter(alive=True, hidden=False).all()
+        people_status = []
+        for character in people:
+            player = character.player.username
+            action = character.night_actions.active().first()
+            description = action.description() if action else None
+            person = {
+                'player': character.player.username,
+                'event':  description
+            }
+            people_status.append(person)
+
+        return people_status
+
+
+    def status(self):
+        description = {
+            'name': self.room.name,
+            'is_open': self.is_open,
+            'weapons': self.list_weapons(),
+        }
+
+        status = {
+            'description': description,
+            'activity': self.list_activity(),
+        }
+
+        return status

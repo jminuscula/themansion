@@ -65,12 +65,18 @@ class NightTurn(models.Model):
 
     def resolve(self):
         self.exectue_actions()
+        self.deactivate_actions()
         self.night.next_turn()
 
     def exectue_actions(self):
         actions = self.actions.all()
         for action in actions:
             action.execute()
+
+    def deactivate_actions(self):
+        actions = self.actions.active()
+        for action in actions:
+            action.deactivate()
 
 class NightActions(ChoicesEnum):
     """
@@ -90,8 +96,31 @@ class NightActions(ChoicesEnum):
 
 class NightActionManager(models.Manager):
 
+    def new_action(self, *args, **kwargs):
+        """
+        Creates a new action and deactivates last action from the character.
+        """
+        new_action = self.create(**kwargs)
+
+        # mark previous actions as not active
+        old_action = self.filter(character=new_action.character, active=True).exclude(pk=new_action.pk).first()
+        if old_action:
+            old_action.deactivate()
+
+        # mark actions in this room, turn, and game as not confirmed
+        room_actions = self.filter(character__current_room=new_action.character.current_room, confirmed=True, active=True) \
+        .exclude(pk=new_action.pk).all()
+        for action in room_actions:
+            action.unconfirm()
+
+        new_action.confirm()
+        return new_action
+
+    def active(self):
+        return self.filter(active=True)
+
     def confirmed(self):
-        return self.filter(confirmed=True)
+        return self.filter(active=True, confirmed=True)
 
     def pending(self):
         return self.filter(confirmed=False)
@@ -133,8 +162,9 @@ class NightAction(models.Model):
         weapon: attack weapon, collected weapon
     """
     night_turn = models.ForeignKey('NightTurn', related_name='actions', on_delete=models.CASCADE)
-    character = models.ForeignKey('Character', related_name='night_turns', on_delete=models.PROTECT)
+    character = models.ForeignKey('Character', related_name='night_actions', on_delete=models.PROTECT)
     action = models.CharField(max_length=32, choices=NightActions.choices())
+    active = models.BooleanField(default=True)
     confirmed = models.BooleanField(default=False)
     character_target = models.ForeignKey('Character', null=True, on_delete=models.PROTECT)
     room_target = models.ForeignKey('GameRoom', null=True, on_delete=models.PROTECT)
@@ -145,6 +175,42 @@ class NightAction(models.Model):
     def __str__(self):
         return "{} by {} in {}".format(self.action, self.character.persona.name, self.night_turn)
 
+    def description(self):
+        player = self.character.player.username
+        confirmed = self.confirmed
+        target = None
+        tool = None
+        if self.room_target:
+            target = self.room_target.room.name
+        elif self.character_target:
+            target = self.character_target.player.username
+            if weapon_target:
+                tool = self.weapon_target.weapon.name
+        elif self.weapon_target:
+            target = self.weapon_target.weapon.name
+
+        description = {
+            'player': player,
+            'action': self.action,
+            'confirmed': confirmed,
+            'target': target,
+            'tool': tool
+        }
+        return description
+
+    def deactivate(self):
+        self.active = False
+        self.save()
+
+    def confirm(self):
+        self.confirmed = True
+        self.save()
+        check_if_turn_is_complete(self.night_turn)
+
+    def unconfirm(self):
+        self.confirmed = False
+        self.save()
+
     def execute(self):
         if self.action == NightActions.MOVE:
             move_action(self.character, self.room_target)
@@ -152,17 +218,16 @@ class NightAction(models.Model):
         if self.action == NightActions.WAIT:
             pass
 
-@receiver(post_save, sender=NightAction)
-def check_if_turn_is_complete(sender, instance, *args, **kwargs):
+def check_if_turn_is_complete(night_turn):
     """
     Checks if this is the last confirmed action of the turn,
     and advances the night in that case.
     """
-    action_count = instance.night_turn.actions.confirmed().count()
-    characters_count = instance.night_turn.night.game.characters.all().count()
+    action_count = night_turn.actions.confirmed().count()
+    characters_count = night_turn.night.game.characters.all().count()
 
     if action_count == characters_count:
-        return instance.night_turn.resolve()
+        return night_turn.resolve()
 
 
 class Day(models.Model):
