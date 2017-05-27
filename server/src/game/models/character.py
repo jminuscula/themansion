@@ -54,7 +54,7 @@ class Character(models.Model):
         """
         Returns the action that the character has declared in this night turn (or None)
         """
-        return self.night_actions.active().first()
+        return self.night_actions.filter(night_turn=self.game.current_night.current_turn).first()
 
 
     def make_action(self, action,  character_target=None, room_target=None, weapon_target=None):
@@ -63,7 +63,7 @@ class Character(models.Model):
 
         night_turn = self.game.current_night.current_turn
 
-        nightAction = NightAction.objects.new_action(night_turn=night_turn, character=self, action=action,
+        nightAction = NightAction.objects.new_or_update(night_turn=night_turn, character=self, action=action,
             character_target=character_target, room_target=room_target, weapon_target=weapon_target)
 
     def hide(self):

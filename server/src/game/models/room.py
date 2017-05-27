@@ -87,12 +87,11 @@ class GameRoom(models.Model):
         people = self.players_here.filter(alive=True, hidden=False).all()
         people_status = []
         for character in people:
-            player = character.player.username
-            action = character.night_actions.active().first()
+            action = character.current_action()
             description = action.description() if action else None
             person = {
                 'player': character.player.username,
-                'event':  description
+                'event': description
             }
             people_status.append(person)
 

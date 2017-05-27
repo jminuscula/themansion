@@ -96,31 +96,29 @@ class NightActions(ChoicesEnum):
 
 class NightActionManager(models.Manager):
 
-    def new_action(self, *args, **kwargs):
+    def new_or_update(self, *args, **kwargs):
         """
-        Creates a new action and deactivates last action from the character.
+        Creates or modifies an action based based on wether the character had
+        an action in the current turn.
+        Then, unconfirms the other actions in the same room.
         """
-        new_action = self.create(**kwargs)
-
-        # mark previous actions as not active
-        old_action = self.filter(character=new_action.character, active=True).exclude(pk=new_action.pk).first()
-        if old_action:
-            old_action.deactivate()
+        keys = {
+            'night_turn': kwargs.get('night_turn'),
+            'character': kwargs.get('character')
+        }
+        action, is_new = self.update_or_create(defaults=kwargs, **keys)
 
         # mark actions in this room, turn, and game as not confirmed
-        room_actions = self.filter(character__current_room=new_action.character.current_room, confirmed=True, active=True) \
-        .exclude(pk=new_action.pk).all()
-        for action in room_actions:
-            action.unconfirm()
+        room_actions = self.filter(character__current_room=action.character.current_room, confirmed=True) \
+            .exclude(pk=action.pk).all()
+        for confirmed_action in room_actions:
+            confirmed_action.unconfirm()
 
-        new_action.confirm()
-        return new_action
-
-    def active(self):
-        return self.filter(active=True)
+        action.confirm()
+        return action
 
     def confirmed(self):
-        return self.filter(active=True, confirmed=True)
+        return self.filter(confirmed=True)
 
     def pending(self):
         return self.filter(confirmed=False)
@@ -130,14 +128,14 @@ class NightActionManager(models.Manager):
             Q(action=NightActions.ATTACK_KILL) |
             Q(action=NightActions.ATTACK_BLANK) |
             Q(action=NightActions.ATTACK_DEFEND)
-            )
+        )
 
     def priority(self, level):
         if level == 1:
             # Spy, hide, heal
             pass
         elif level == 2:
-            return self.filter(action==NightActions.CLOSE_DOOR)
+            return self.filter(action=NightActions.CLOSE_DOOR)
         elif level == 3:
             return self.attacks().filter(weapon_target__weapon_type=WeaponType.GUN)
         elif level == 4:
@@ -164,7 +162,6 @@ class NightAction(models.Model):
     night_turn = models.ForeignKey('NightTurn', related_name='actions', on_delete=models.CASCADE)
     character = models.ForeignKey('Character', related_name='night_actions', on_delete=models.PROTECT)
     action = models.CharField(max_length=32, choices=NightActions.choices())
-    active = models.BooleanField(default=True)
     confirmed = models.BooleanField(default=False)
     character_target = models.ForeignKey('Character', null=True, on_delete=models.PROTECT)
     room_target = models.ForeignKey('GameRoom', null=True, on_delete=models.PROTECT)
