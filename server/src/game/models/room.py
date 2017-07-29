@@ -72,6 +72,12 @@ class GameRoom(models.Model):
     def __str__(self):
         return "{} in {}".format(self.room.name, self.game)
 
+    def basic_info(self):
+        return {
+            'pk': self.pk,
+            'name': self.room.name
+        }
+
     def close(self):
         self.is_open = False
         self.save(update_fields=('is_open', ))

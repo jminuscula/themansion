@@ -71,6 +71,36 @@ class BaseGameMode(metaclass=abc.ABCMeta):
         return game
 
 
+class DebugCharactersMixin:
+    DEBUG_PERSONA_TITLES = [
+        'The Psychologist',
+        'The Bodyguard',
+        # 'The Undertaker',
+        # 'The Avenger',
+        # 'The Host',
+        # 'The Maniac',
+        # 'The Ex-Marine',
+        # 'The Manipulator',
+        # 'The Reporter',
+        # 'The Policeman',
+    ]
+
+    @classmethod
+    def create_characters(cls, game, players):
+        titles = cls.DEBUG_PERSONA_TITLES
+        characters = []
+        for (title, player) in zip(titles, players):
+            try:
+                persona = Persona.objects.get(title=title)
+            except:
+                raise GameModeUnavailable('persona "{}" is not available'.format(title))
+
+            character = Character.objects.create(game=game, player=player, persona=persona)
+            characters.append(character)
+
+        return characters
+
+
 class DefaultCharactersMixin:
 
     DEFAULT_PERSONA_TITLES = [
@@ -299,6 +329,14 @@ class DefaultWeaponsMixin:
             raise GameModeUnavailable('weapon "{}" is not available'.format(weapon_name))
 
 class DefaultGameMode(DefaultCharactersMixin,
+                      DefaultRoomsMixin,
+                      DefaultWeaponsMixin,
+                      DefaultAbilitiesMixin,
+                      DefaultObjectivesMixin,
+                      BaseGameMode):
+    pass
+
+class DebugGameMode(DebugCharactersMixin,
                       DefaultRoomsMixin,
                       DefaultWeaponsMixin,
                       DefaultAbilitiesMixin,

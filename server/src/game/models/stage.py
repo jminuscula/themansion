@@ -7,7 +7,7 @@ from django.dispatch import receiver
 
 from utils import ChoicesEnum
 from mansion import settings
-from game.actions import move_action
+from game.actions import ActionManager
 from game.models.weapon import WeaponType
 
 class Night(models.Model):
@@ -65,33 +65,27 @@ class NightTurn(models.Model):
 
     def resolve(self):
         self.exectue_actions()
-        self.deactivate_actions()
         self.night.next_turn()
 
     def exectue_actions(self):
         actions = self.actions.all()
         for action in actions:
-            action.execute()
+            ActionManager.execute_action(action)
 
-    def deactivate_actions(self):
-        actions = self.actions.active()
-        for action in actions:
-            action.deactivate()
 
 class NightActions(ChoicesEnum):
     """
     All the actions a player may execute during a night's turn.
-    Special actions depend on each character.
     """
     MOVE = 'move'
     ATTACK_KILL = 'attack_kill'
     ATTACK_DEFEND = 'attack_defend'
     ATTACK_BLANK = 'attack_blank'
     PICK_WEAPON = 'pick_weapon'
-    SPECIAL = 'special'
     CLOSE_DOOR = 'close_door'
     OPEN_DOOR = 'open_door'
     WAIT = 'wait'
+    HIDE = 'hide'
 
 
 class NightActionManager(models.Manager):
@@ -208,12 +202,6 @@ class NightAction(models.Model):
         self.confirmed = False
         self.save()
 
-    def execute(self):
-        if self.action == NightActions.MOVE:
-            move_action(self.character, self.room_target)
-
-        if self.action == NightActions.WAIT:
-            pass
 
 def check_if_turn_is_complete(night_turn):
     """
