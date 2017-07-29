@@ -69,8 +69,9 @@ class NightTurn(models.Model):
 
     def exectue_actions(self):
         actions = self.actions.all()
-        for action in actions:
-            ActionManager.execute_action(action)
+        actions_by_priority = ActionManager.actions_by_priority(actions)
+        for action in actions_by_priority:
+            ActionManager.execute_nightaction(action)
 
 
 class NightActions(ChoicesEnum):

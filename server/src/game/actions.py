@@ -8,6 +8,10 @@ class ActionManager:
         return getattr(sys.modules[__name__], 'Action' + action_name)
 
     @classmethod
+    def _get_action_from_nightaction(cls, nightAction):
+        return ActionManager._get_action_by_name(nightAction.action)
+
+    @classmethod
     def get_available_actions(cls, character):
         action_names = ['Move', 'Wait']
         available_actions = {}
@@ -20,12 +24,18 @@ class ActionManager:
         return available_actions
 
     @classmethod
-    def execute_action(cls, nightAction):
+    def execute_nightAction(cls, nightAction):
         cls._get_action_by_name(nightAction.action) \
             .execute(nightAction)
 
-    def actions_by_priority():
-        pass
+    @classmethod
+    def actions_by_priority(cls, nightActions):
+        # a list of Actions from nightActions
+        actions = list(map(ActionManager._get_action_from_nightaction, nightActions))
+        # pairing every NightAction with its Action
+        actions_map = dict(zip(nightActions, actions))
+        # sort by action priority
+        return sorted(actions_map, key=lambda a: actions_map[a].priority)
 
 
 class BaseAction:
