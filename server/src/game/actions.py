@@ -3,6 +3,26 @@ import sys
 from game.models.room import RoomType
 from game.models.ability import AbilityActionPhase
 
+"""
+Actions should follow this priority
+(10) Hide
+(11) Spy
+(12) Heal
+(20) Close door
+--- Aim Kill ---
+(30) Gun
+(31) Knife
+(32) Stun weapon
+--- Aim react ---
+(40) Gun
+(41) Knife
+(42) Stun weapon
+
+(50) Aim blank
+(60) Move
+(70) Scare
+(80) Wait
+"""
 
 class ActionManager:
 
@@ -78,7 +98,7 @@ class BaseAction:
 
 class ActionMove(BaseAction):
     name = 'Move'
-    priority = 6
+    priority = 60
 
     @classmethod
     def is_available(cls, character):
@@ -110,7 +130,7 @@ class ActionMove(BaseAction):
 
 class ActionWait(BaseAction):
     name = "Wait"
-    priority = 9
+    priority = 80
 
     @classmethod
     def is_available(cls, character):
@@ -139,4 +159,22 @@ class ActionHide(BaseAction):
 
     @classmethod
     def execute(cls, nightAction):
-        nightAction.character.hide()
+        nightAction.character.hide(50)
+
+
+class ActionAttackBlank(BaseAction):
+    name = "Attack blank"
+    priority = 50
+
+    @classmethod
+    def is_available(cls, nightAction):
+        weapons = nightAction.character.weapons.all()
+        people = nightAction.character.current_room.list_people_visible()
+        is_someone_else_here = len(people) > 1 or \
+            (len(people) == 1 and nightAction.character not in people)
+
+        return len(weapons) > 0 and is_someone_else_here
+
+    @classmethod
+    def execute(self, nightAction):
+        pass
