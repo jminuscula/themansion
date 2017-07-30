@@ -6,7 +6,8 @@ from game.models.gameplay import Game
 from game.models.weapon import Weapon, CharacterWeapon
 from game.models.room import Room, GameRoom
 from game.models.persona import Persona
-from game.models.ability import Ability, CharacterAbility
+from game.models.ability import Ability
+from game.models.characterAbility import CharacterAbility
 from game.models.objective import Objective, CharacterObjective
 from game.models.character import Character
 
@@ -74,9 +75,9 @@ class BaseGameMode(metaclass=abc.ABCMeta):
 class DebugCharactersMixin:
     DEBUG_PERSONA_TITLES = [
         'The Psychologist',
-        'The Bodyguard',
+        #'The Bodyguard',
         # 'The Undertaker',
-        # 'The Avenger',
+        'The Avenger',
         # 'The Host',
         # 'The Maniac',
         # 'The Ex-Marine',

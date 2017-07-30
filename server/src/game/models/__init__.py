@@ -1,7 +1,8 @@
 
 from .gameplay import Game
 from .persona import Persona
-from .ability import AbilityActionPhase, Ability, CharacterAbility
+from .ability import AbilityActionPhase, Ability
+from .characterAbility import CharacterAbility
 from .objective import ObjectiveTrigger, Objective, CharacterObjective
 from .character import Character, Terror, Kill
 from .room import Room, RoomType, GameRoom

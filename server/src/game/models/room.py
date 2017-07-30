@@ -89,8 +89,11 @@ class GameRoom(models.Model):
     def list_weapons(self):
         return [weapon.name for weapon in self.weapons.all()]
 
+    def list_people_visible(self):
+        return self.players_here.filter(alive=True, hidden=False).all()
+
     def list_activity(self):
-        people = self.players_here.filter(alive=True, hidden=False).all()
+        people = self.list_people_visible()
         people_status = []
         for character in people:
             action = character.current_action()
@@ -114,6 +117,7 @@ class GameRoom(models.Model):
         status = {
             'description': description,
             'activity': self.list_activity(),
+            'turnCount': self.game.current_night.turn_count()
         }
 
         return status

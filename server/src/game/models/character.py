@@ -4,8 +4,10 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from game.exceptions import ActionInWrongStage
+from game.exceptions import ActionInWrongStage, AbilityError
 
+from game.actions import ActionManager
+from game.models.characterAbility import CharacterAbility
 from game.models.message import GameMessage
 from game.models.room import GameRoom
 from game.models.stage import Night, NightTurn, NightAction, NightActions
@@ -45,10 +47,11 @@ class Character(models.Model):
                                           message=msg,
                                           **current_stage)
 
-    def available_actions(self):  # TODO
+    def available_actions(self):
         """
         Returns all available action that the character may execute at this point.
         """
+        return ActionManager.get_available_actions(self)
 
     def current_action(self):
         """
@@ -65,6 +68,14 @@ class Character(models.Model):
 
         nightAction = NightAction.objects.new_or_update(night_turn=night_turn, character=self, action=action,
             character_target=character_target, room_target=room_target, weapon_target=weapon_target)
+
+
+    def execute_ability(self, ability, action=None):
+        if ability in self.abilities.all():
+            characterAbility = CharacterAbility.objects.filter(character=self, ability=ability).first()
+            return characterAbility.run(action=action)
+        else:
+            raise AbilityError
 
     def hide(self):
         self.hidden = True

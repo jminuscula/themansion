@@ -79,13 +79,13 @@ class NightActions(ChoicesEnum):
     All the actions a player may execute during a night's turn.
     """
     MOVE = 'move'
+    WAIT = 'wait'
     ATTACK_KILL = 'attack_kill'
     ATTACK_DEFEND = 'attack_defend'
     ATTACK_BLANK = 'attack_blank'
     PICK_WEAPON = 'pick_weapon'
     CLOSE_DOOR = 'close_door'
     OPEN_DOOR = 'open_door'
-    WAIT = 'wait'
     HIDE = 'hide'
 
 

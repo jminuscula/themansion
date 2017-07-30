@@ -1,5 +1,9 @@
 import sys
 
+from game.models.room import RoomType
+from game.models.ability import AbilityActionPhase
+
+
 class ActionManager:
 
     @classmethod
@@ -13,18 +17,18 @@ class ActionManager:
 
     @classmethod
     def get_available_actions(cls, character):
-        action_names = ['Move', 'Wait']
+        action_names = ['Move', 'Wait', 'Hide']
         available_actions = {}
         for action_name in action_names:
             action = cls._get_action_by_name(action_name)
-            options = action.available_options(character)
-            if options is not None:
+            if action.is_available(character):
+                options = action.available_options(character)
                 available_actions[action.name] = options
 
         return available_actions
 
     @classmethod
-    def execute_nightAction(cls, nightAction):
+    def execute_nightaction(cls, nightAction):
         cls._get_action_by_name(nightAction.action) \
             .execute(nightAction)
 
@@ -39,8 +43,23 @@ class ActionManager:
 
 
 class BaseAction:
+    # the lower the priority number, the sooner it's executed
+
     @classmethod
-    def available_options(self, character):
+    def is_enabled_by_ability(cls, character):
+        night_abilities = character.abilities.filter(action_phase=AbilityActionPhase.NIGHT).all()
+        for ability in night_abilities:
+            if character.execute_ability(ability, action=cls):
+                return True
+
+        return False
+
+    @classmethod
+    def is_available(cls, character):
+        raise NotImplementedError
+
+    @classmethod
+    def available_options(cls, character):
         """
         Usually 1 or 2 of these should be returned in specific implementations.
         There are a few actions without options. Returning {} will be enough.
@@ -52,18 +71,24 @@ class BaseAction:
         """
         return {}
 
+    @classmethod
+    def execute(cls, nightAction):
+        raise NotImplementedError
+
 
 class ActionMove(BaseAction):
     name = 'Move'
-    priority = 3
+    priority = 6
 
     @classmethod
-    def execute(self, nightAction):
-            nightAction.character.current_room = nightAction.room_target
-            return nightAction.character.save()
+    def is_available(cls, character):
+        if cls.is_enabled_by_ability(character):
+            return True
+        # TODO don't make it available if there are no open rooms available
+        return True
 
     @classmethod
-    def available_options(self, character):
+    def available_options(cls, character):
         current_room = character.current_room
 
         # this take the connected rooms, and finds the gamerooms for them;
@@ -72,21 +97,46 @@ class ActionMove(BaseAction):
         available_rooms = current_room.room.connections.all()
         available_gamerooms = []
         for room in available_rooms:
+            # this basic_info thing is just a temporary thing for the API
             available_gamerooms.append(character.game.rooms.filter(room=room, is_open=True).first().basic_info())
 
         return available_gamerooms
 
     @classmethod
-    def is_available(self, character):
-        return True
+    def execute(cls, nightAction):
+            nightAction.character.current_room = nightAction.room_target
+            return nightAction.character.save()
+
 
 class ActionWait(BaseAction):
     name = "Wait"
-    priority = 7
-
-    def execute(self):
-        pass
+    priority = 9
 
     @classmethod
-    def is_available(self, character):
+    def is_available(cls, character):
         return True
+
+    @classmethod
+    def execute(cls, nightAction):
+        pass
+
+
+class ActionHide(BaseAction):
+    name = "Hide"
+    priority = 1
+
+    @classmethod
+    def is_available(cls, character):
+        # if you're alone (hidden people don't count) in the observatory
+        # or anywhere if you have the ability
+        if cls.is_enabled_by_ability(character):
+            return True
+        room = character.current_room
+        people = room.list_people_visible()
+        return len(people) == 1 and people[0] == character \
+            and (room.room.room_type == RoomType.OBSERVATORY)
+
+
+    @classmethod
+    def execute(cls, nightAction):
+        nightAction.character.hide()

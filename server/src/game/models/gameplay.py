@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from utils import ChoicesEnum
 from mansion import settings
 
-from game.models.ability import CharacterAbility
+from game.models.characterAbility import CharacterAbility
 from game.models.stage import Night, Day
 from game.exceptions import GameUnstarted, GameComplete
 

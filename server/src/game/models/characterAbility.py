@@ -1,0 +1,133 @@
+from functools import wraps
+
+from django.db.models import Q
+from django.db import models
+
+from game.actions import *
+
+from game.models.weapon import Weapon, CharacterWeapon
+from game.models.room import GameRoom
+from game.exceptions import AbilityError
+
+
+class CharacterAbilityObjectManager(models.Manager):
+
+    def available(self, *args, **kwargs):
+        return self.filter(available=True)
+
+    def phase_start(self, *args, **kwargs):
+        return self.filter(ability__action_phase=AbilityActionPhase.STARTGAME)
+
+
+class CharacterAbility(models.Model):
+    """
+    Game character's ability tracking.
+
+    Checks for usage limit, availability, etc.
+    """
+    character = models.ForeignKey('Character')
+    ability = models.ForeignKey('Ability')
+    available = models.BooleanField(default=True)
+
+    objects = CharacterAbilityObjectManager()
+
+    class Meta:
+        unique_together = (('character', 'ability'), )
+        verbose_name_plural = 'character abilities'
+
+    def __str__(self):
+        return "{} for {}".format(self.ability.name, self.character)
+
+    def get_ability_fn(self):
+        ability_fn_name = '_ability_{}'.format(self.ability.name)
+        ability_fn_name = ability_fn_name.replace(' ', '_')
+        ability_fn_name = ability_fn_name.lower()
+
+        return getattr(self, ability_fn_name)
+
+    def run(self, *args, **kwargs):
+        """
+        executes this ability's specific method
+        """
+
+        ability_fn = self.get_ability_fn()
+        if ability_fn is None:
+            raise ValueError('ability "{}" can not be executed'.format(self.ability.name))
+
+        return ability_fn(self, *args, **kwargs)
+
+    def disable_after_run(fn):
+        @wraps(fn)
+        def disabling(self, *args, **kwargs):
+            ret = fn(*args, **kwargs)
+            self.available = False
+            self.save()
+            return ret
+        return disabling
+
+    @disable_after_run
+    def _ability_family_privilege(self, *args, **kwargs):
+        """
+        The Host and The Undertaker have their identities revealed between them
+        """
+        the_undertaker = self.character.game.objects.get(game=self.character.game, persona__title='The Undertaker')
+        the_host = self.character.game.objects.get(game=self.character.game, persona__title='The Host')
+
+        the_undertaker.post_message(
+            'As The Undertaker, you know The Host is {}'.format(the_host.player.username)
+        )
+
+        the_host.post_message(
+            'As The Host, you know The Undertaker is {}'.format(the_undertaker.player.username)
+        )
+
+    @disable_after_run
+    def _ability_cutting_edge(self, *args, **kwargs):
+        """
+        The character gets a knife
+        """
+        try:
+            knife = Weapon.objects.get(name='Knife')
+        except Weapon.DoesNotExist:
+            raise AbilityError('Knife is not available in this game')
+
+        return CharacterWeapon.objects.create(character=self.character, weapon=knife)
+
+    def _ability_stealth(self, *args, **kwargs):
+        """
+        The character can hide in any room
+        """
+        action = kwargs.get('action')
+        if action == ActionHide:
+            room = self.character.current_room
+            people = room.list_people_visible()
+            # available if there's no one else in the room; not hidden nor dead
+            return len(people) == 1 and people[0] == self.character
+
+        return False
+
+
+    def _ability_reload(self, *args, **kwargs):
+        """
+        The character reloads 2 Bullets
+        """
+        try:
+            gun = CharacterWeapon.objects.get(character=self.character, weapon__name="Gun")
+        except CharacterWeapon.DoesNotExist:
+            raise AbilityError('Character does not have a gun')
+
+        gun.ammo = 2
+        return gun.save()
+
+    def _ability_gatekeeper(self, *args, room=None):
+        """
+        The character closes a door
+        """
+        current = self.character.current_room
+        reachable_q = Q(pk=current.pk) | Q(room__pk__in=current.room.connections.all())
+        open_rooms = GameRoom.objects.open().filter(reachable_q, room__closeable=True)
+
+        if room not in open_rooms:
+            raise AbilityError('Room is closed, not closable, or out of reach')
+
+        return room.close()
